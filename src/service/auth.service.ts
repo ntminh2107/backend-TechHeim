@@ -47,7 +47,22 @@ export const register = async (
     }
   } catch (err) {
     console.error('Error registering user:', err)
-    // Ensure the client gets a response even if an error occurs
+
     return `Error registering user: ${err}`
+  }
+}
+
+export const findUserByEmail = async (email: string): Promise<User | false> => {
+  try {
+    const db = await connectionToDB()
+    const user = await db?.select().from(tblUser).where(eq(tblUser, email))
+    if (user && (await user).length > 0) {
+      return user[0] as User
+    } else {
+      return false
+    }
+  } catch (err) {
+    console.error('Error registering user:', err)
+    return false
   }
 }

@@ -1,7 +1,9 @@
-import { register } from '@src/service/auth.service'
+import { findUserByEmail, register } from '@src/service/auth.service'
 import HttpStatusCode from '@src/utils/httpStatusCode'
 import { NextFunction, Request, Response } from 'express'
 import { validationResult } from 'express-validator'
+import bcrypt from 'bcryptjs'
+import { generateAccessToken } from '@src/service/jwt.service'
 
 const errorMessage = (res: Response, errorMessage: unknown) => {
   if (typeof errorMessage === 'string') {
@@ -39,7 +41,6 @@ const registerUser = async (
       return errorMessage(res, 'User is not created successfully: ' + user)
     }
 
-    // Respond with the newly created user data
     res.status(HttpStatusCode.CREATED).json({
       message: 'User created successfully',
       user
@@ -49,4 +50,31 @@ const registerUser = async (
   }
 }
 
-export default registerUser
+const login = async (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body
+  try {
+    const user = await findUserByEmail(email)
+    if (!user) {
+      return res.status(HttpStatusCode.NOT_FOUND).json({
+        message: "user doesn't exist, pls try again!!"
+      })
+    }
+
+    const isCorrectPassword = await bcrypt.compare(password, user.password)
+
+    if (!isCorrectPassword) {
+      return res
+        .status(HttpStatusCode.NOT_MATCH)
+        .json({ message: 'Password is not correct, pls try again!!' })
+    }
+
+    const jwtToken = generateAccessToken(user.id)
+    res.status(HttpStatusCode.ACCEPTED).json({
+      token: jwtToken
+    })
+  } catch (err) {
+    next(err)
+  }
+}
+
+export { registerUser, login }
