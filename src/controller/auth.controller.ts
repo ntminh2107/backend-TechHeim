@@ -51,16 +51,21 @@ const registerUser = async (
 }
 
 const login = async (req: Request, res: Response, next: NextFunction) => {
-  const { email, password } = req.body
   try {
-    const user = await findUserByEmail(email)
+    const user = await findUserByEmail(req.body.email)
     if (!user) {
       return res.status(HttpStatusCode.NOT_FOUND).json({
         message: "user doesn't exist, pls try again!!"
       })
     }
+    console.log(user)
 
-    const isCorrectPassword = await bcrypt.compare(password, user.password)
+    const isCorrectPassword = await bcrypt.compare(
+      req.body.password,
+      user.password
+    )
+
+    console.log(isCorrectPassword)
 
     if (!isCorrectPassword) {
       return res

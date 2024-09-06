@@ -7,7 +7,7 @@ const getAuthRouter = () => {
 
   router.post('/register', registerValidation(), registerUser)
 
-  router.post('/login', loginValidation, login)
+  router.post('/login', loginValidation(), login)
 
   return router
 }

@@ -55,7 +55,10 @@ export const register = async (
 export const findUserByEmail = async (email: string): Promise<User | false> => {
   try {
     const db = await connectionToDB()
-    const user = await db?.select().from(tblUser).where(eq(tblUser, email))
+    const user = await db
+      ?.select()
+      .from(tblUser)
+      .where(eq(tblUser.email, email))
     if (user && (await user).length > 0) {
       return user[0] as User
     } else {
