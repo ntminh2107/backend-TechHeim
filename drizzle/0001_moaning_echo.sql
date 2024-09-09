@@ -1,0 +1,1 @@
+ALTER TABLE "comments" RENAME COLUMN "product_price" TO "rating";
