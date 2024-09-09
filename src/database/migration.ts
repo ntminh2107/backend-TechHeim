@@ -2,7 +2,6 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import { Client } from 'pg'
 import dotenv from 'dotenv'
 import { migrate } from 'drizzle-orm/node-postgres/migrator'
-import postgres from 'postgres'
 
 dotenv.config()
 export const migrationDB = async () => {
@@ -20,7 +19,7 @@ export const migrationDB = async () => {
     console.log('connect to db success')
     const db = drizzle(client)
     migrate(db, { migrationsFolder: 'drizzle' })
-    return db
+    return 'success'
   } catch (err) {
     console.error('cannot connect to db')
   }

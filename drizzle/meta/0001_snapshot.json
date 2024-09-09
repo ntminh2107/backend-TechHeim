@@ -1,6 +1,6 @@
 {
-  "id": "8101a471-d280-48eb-ba8d-42cb14c92094",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "0c27ee81-f6d6-40a8-93a5-cdd249ff713f",
+  "prevId": "8101a471-d280-48eb-ba8d-42cb14c92094",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -125,8 +125,8 @@
           "notNull": false,
           "default": "now()"
         },
-        "product_price": {
-          "name": "product_price",
+        "rating": {
+          "name": "rating",
           "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false
