@@ -11,7 +11,6 @@ import { HttpError } from '@/libs/HttpError'
 
 const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, phoneNumber } = req.body
-  console.log(fullName, email, password, phoneNumber)
   const user = await register(fullName, email, password, phoneNumber)
 
   if (typeof user === 'string')
@@ -34,14 +33,11 @@ const login = async (req: Request, res: Response) => {
       HttpStatusCode.NOT_FOUND
     )
   }
-  console.log(user)
 
   const isCorrectPassword = await bcrypt.compare(
     req.body.password,
     user.password
   )
-
-  console.log(isCorrectPassword)
 
   if (!isCorrectPassword) {
     throw new HttpError(
@@ -50,7 +46,6 @@ const login = async (req: Request, res: Response) => {
     )
   }
 
-  console.log(process.env.ACCESS_TOKEN_KEY)
   const jwtToken = generateAccessToken(user.id)
   res.status(HttpStatusCode.ACCEPTED).json({
     token: jwtToken
@@ -59,8 +54,6 @@ const login = async (req: Request, res: Response) => {
 
 const getUser = async (req: Request, res: Response) => {
   const userID = req.user?.id
-
-  console.log(userID)
 
   if (!userID)
     throw new HttpError('no user found with this ID', HttpStatusCode.NOT_FOUND)

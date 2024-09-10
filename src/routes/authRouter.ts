@@ -1,5 +1,5 @@
 import { getUser, login, registerUser } from '@/controllers/auth.controller'
-import verifyJWT from '@/middlewares/authorization'
+import verifyJWT from '@/middlewares/authentication'
 import wrapError from '@/utils/wrapError'
 import { loginValidation, registerValidation } from '@/validators'
 import { Router } from 'express'
