@@ -1,5 +1,5 @@
 import { getDbClient } from '@/database/connection'
-import { tblUser } from '@/models/user.schema'
+import { tblRole, tblUser } from '@/models/user.schema'
 import { User } from '@/types/user'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
@@ -12,7 +12,7 @@ export const register = async (
 ): Promise<User | string> => {
   const db = getDbClient()
   const currentTime = new Date()
-  console.log('worked')
+
   const existedUser = await db
     .select()
     .from(tblUser)
@@ -59,7 +59,20 @@ export const findUserByEmail = async (email: string): Promise<User | false> => {
 export const findUserByID = async (userID: string): Promise<User | string> => {
   const db = getDbClient()
 
-  const user = await db.select().from(tblUser).where(eq(tblUser.id, userID))
+  const user = await db
+    .select({
+      id: tblUser.id,
+      fullName: tblUser.fullName,
+      email: tblUser.email,
+      phoneNumber: tblUser.phoneNumber,
+      role: tblRole.role,
+      createdAt: tblUser.created_at,
+      updatedAt: tblUser.updated_at
+    })
+    .from(tblUser)
+    .innerJoin(tblRole, eq(tblUser.roleID, tblRole.id))
+    .where(eq(tblUser.id, userID))
+    .limit(1)
 
   if (user.length === 0) throw new Error('no user found')
   return user[0] as User
