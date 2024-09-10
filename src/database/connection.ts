@@ -1,8 +1,15 @@
 import { drizzle } from 'drizzle-orm/node-postgres'
 import { Client } from 'pg'
-import dotenv from 'dotenv'
+import { NodePgDatabase } from 'drizzle-orm/node-postgres'
+//TODO: dot env trong app.tsx
 
-dotenv.config()
+let dbClient: NodePgDatabase | null = null
+
+export const getDbClient = () => {
+  if (dbClient === null) throw new Error('DB client is not initialized')
+  return dbClient
+}
+
 export const connectionToDB = async () => {
   try {
     const client = new Client({
@@ -16,9 +23,7 @@ export const connectionToDB = async () => {
     await client.connect()
 
     console.log('connect to db success')
-    const db = drizzle(client)
-
-    return db
+    dbClient = drizzle(client)
   } catch (err) {
     console.error('cannot connect to db')
   }
