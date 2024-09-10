@@ -1,25 +1,24 @@
+import dotenv from 'dotenv'
+dotenv.config()
+
 import express from 'express'
-import passport from 'passport'
 import { connectionToDB } from './database/connection'
-import { getAuthRouter } from './routes/authRoute'
+import errorHandler from './middlewares/errorHandler'
+import getRouter from './routes/routes'
+
+import ApplyMiddlewares from './middlewares/middlewares'
 
 const app = express()
 
 const start = async () => {
-  await connectionToDB()
+  ApplyMiddlewares(app)
 
-  app.use(passport.initialize())
-  app.use(express.json())
+  app.use('/api', getRouter())
+  app.use(errorHandler)
 
-  app.use('/api/auth', getAuthRouter())
-
-  app.listen(4000, () => {
-    console.log(`server is running on 4000`)
-  })
-
-  app.get('/test', (_, res) => {
-    res.send('API is working')
+  app.listen(process.env.ENV_PORT, () => {
+    console.log(`server is running on ${process.env.ENV_PORT}`)
   })
 }
 
-start()
+Promise.all([connectionToDB()]).then(async () => await start())
