@@ -4,7 +4,7 @@ export type User = {
   email: string
   password: string
   phoneNumber: string
-  role?: Role['role']
+  role?: string
   createdAt?: Date
   updatedAt?: Date
 }

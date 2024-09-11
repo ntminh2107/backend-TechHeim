@@ -46,7 +46,14 @@ const login = async (req: Request, res: Response) => {
     )
   }
 
-  const jwtToken = generateAccessToken(user.id)
+  if (!user.id || !user.role) {
+    throw new HttpError(
+      'User information is incomplete, unable to login!',
+      HttpStatusCode.BAD_REQUEST
+    )
+  }
+
+  const jwtToken = generateAccessToken(user.id, user.role)
   res.status(HttpStatusCode.ACCEPTED).json({
     token: jwtToken
   })

@@ -14,8 +14,9 @@ const verifyJWT = (req: Request, _res: Response, next: NextFunction) => {
   if (token && isCustomAuth) {
     decodedData = jwt.verify(token, process.env.ACCESS_TOKEN_KEY!) as {
       userID: string
+      role: string
     }
-    req.user = { id: decodedData.userID }
+    req.user = { id: decodedData.userID, role: decodedData.role }
   }
   return next()
 }
