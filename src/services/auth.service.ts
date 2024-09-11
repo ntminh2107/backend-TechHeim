@@ -50,7 +50,17 @@ export const register = async (
 export const findUserByEmail = async (email: string): Promise<User | false> => {
   const db = getDbClient()
 
-  const user = await db.select().from(tblUser).where(eq(tblUser.email, email))
+  const user = await db
+    .select({
+      id: tblUser.id,
+      email: tblUser.email,
+      password: tblUser.password,
+      role: tblRole.role
+    })
+    .from(tblUser)
+    .innerJoin(tblRole, eq(tblUser.roleID, tblRole.id))
+    .where(eq(tblUser.email, email))
+    .limit(1)
 
   if (user?.length === 0) throw new Error('No user found')
   return user[0] as User
