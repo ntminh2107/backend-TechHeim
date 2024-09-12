@@ -6,12 +6,18 @@ import { connectionToDB } from './database/connection'
 import errorHandler from './middlewares/errorHandler'
 import getRouter from './routes/routes'
 
-import ApplyMiddlewares from './middlewares/middlewares'
+import HttpStatusCode from './utils/httpStatusCode'
+import applyMiddlewares from './middlewares/middlewares'
 
 const app = express()
 
 const start = async () => {
-  ApplyMiddlewares(app)
+  app.use(applyMiddlewares())
+
+  /*Health check */
+  app.get('/healthcheck', (_, res) =>
+    res.sendStatus(HttpStatusCode.ACCEPTED).json({ message: 'healthy' })
+  )
 
   app.use('/api', getRouter())
   app.use(errorHandler)
