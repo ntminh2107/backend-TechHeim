@@ -12,14 +12,12 @@ import { tblUser } from './user.schema'
 
 export const tblCategories = pgTable('categories', {
   id: serial('id').primaryKey().unique(),
-  categoryID: varchar('category_id', { length: 255 }),
   categoryName: varchar('category_name', { length: 255 }),
   totalProducts: integer('total_product').default(0)
 })
 
 export const tblBrands = pgTable('brands', {
   id: serial('id').primaryKey().unique(),
-  brandID: varchar('brand_id', { length: 255 }),
   brandName: varchar('brand_name', { length: 255 }),
   totalProducts: integer('total_product').default(0)
 })
