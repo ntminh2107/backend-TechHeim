@@ -1,7 +1,11 @@
 import { NextFunction, Request, Response } from 'express'
 
-const wrapError = <T>(
-  callback: (req: Request, res: Response, next: NextFunction) => Promise<T>
+const wrap = <T>(
+  callback: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => Promise<T> | void
 ) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -13,4 +17,4 @@ const wrapError = <T>(
   }
 }
 
-export default wrapError
+export default wrap

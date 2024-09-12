@@ -50,6 +50,13 @@
       "when": 1726122912158,
       "tag": "0006_lying_malcolm_colcord",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1726136829889,
+      "tag": "0007_closed_jack_power",
+      "breakpoints": true
     }
   ]
 }

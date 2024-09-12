@@ -3,7 +3,7 @@ import HttpStatusCode from '@/utils/httpStatusCode'
 import { NextFunction, Request, Response } from 'express'
 import jwt from 'jsonwebtoken'
 
-const verifyJWT = (req: Request, _res: Response, next: NextFunction) => {
+const authentication = (req: Request, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization
   if (!authHeader || !authHeader?.startsWith('Bearer ')) {
     throw new HttpError('Unauthorized', HttpStatusCode.NOT_FOUND)
@@ -21,4 +21,4 @@ const verifyJWT = (req: Request, _res: Response, next: NextFunction) => {
   return next()
 }
 
-export default verifyJWT
+export default authentication

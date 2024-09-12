@@ -1,29 +1,43 @@
-// import { NextFunction, Request, Response } from 'express'
+import { HttpError } from '@/libs/HttpError'
+import { insertProduct } from '@/services/product.service'
+import HttpStatusCode from '@/utils/httpStatusCode'
+import { Request, Response } from 'express'
 
-// const addProduct = async (req: Request, res: Response, next: NextFunction) => {
-//   const {
-//     name,
-//     image,
-//     price,
-//     color,
-//     category,
-//     brand,
-//     specifications,
-//     discount,
-//     percent,
-//     salePrice
-//   } = req.body
+const addProduct = async (req: Request, res: Response) => {
+  const {
+    name,
+    image,
+    price,
+    color,
+    category,
+    brand,
+    specifications,
+    discount,
+    percent
+  } = req.body
 
-//   const product = await insertProduct(
-//     name,
-//     image,
-//     price,
-//     color,
-//     category,
-//     brand,
-//     specifications,
-//     discount,
-//     percent,
-//     salePrice
-//   )
-// }
+  if (!name || !price || !category || !brand) {
+    throw new HttpError(
+      'This field must not be empty',
+      HttpStatusCode.INTERNAL_SERVER_ERROR
+    )
+  }
+
+  const product = await insertProduct(
+    name,
+    image,
+    price,
+    color,
+    category,
+    brand,
+    specifications,
+    discount,
+    percent
+  )
+
+  res.status(HttpStatusCode.ACCEPTED).json({
+    product: product
+  })
+}
+
+export default addProduct
