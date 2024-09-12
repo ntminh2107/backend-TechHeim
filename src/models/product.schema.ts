@@ -54,6 +54,6 @@ export const tblProductPriceTag = pgTable('productPriceTags', {
   productID: uuid('product_id').references(() => tblProducts.id),
   price: decimal('product_price', { precision: 10, scale: 2 }),
   discount: boolean('product_discount').default(false),
-  percent: integer('product_price'),
+  percent: integer('product_percent'),
   salePrice: decimal('product_sale_price', { precision: 10, scale: 2 })
 })
