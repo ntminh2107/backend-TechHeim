@@ -2,15 +2,12 @@ export type Product = {
   id: string
   name: string
   image: string
-  price: number
-  discount?: boolean
-  percent?: number
-  salePrice?: number
+  price: PriceTag
   color: string
   rating?: number
   category: string
   brand: string
-  specifications?: Specification[]
+  specifications?: { key: string; value: string }[]
   comments?: Comment[]
 }
 
@@ -40,4 +37,15 @@ export type Comment = {
 export type Specification = {
   id: number
   productID: string
+  key: string
+  value: string
+}
+
+export type PriceTag = {
+  id: number
+  productID: string
+  price: string
+  discount?: boolean
+  percent?: number
+  saleprice?: string
 }
