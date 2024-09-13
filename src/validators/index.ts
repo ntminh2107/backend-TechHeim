@@ -35,9 +35,7 @@ export const registerValidation = () => {
 
 export const productValidation = () => {
   return [
-    body('product_price').isDecimal().withMessage('Price is not valid number'),
-    body('product_discount')
-      .isBoolean()
-      .withMessage('Discount must be true or false')
+    body('price').isDecimal().withMessage('Price is not valid number'),
+    body('discount').isBoolean().withMessage('Discount must be true or false')
   ]
 }

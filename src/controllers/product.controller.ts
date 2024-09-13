@@ -1,5 +1,5 @@
 import { HttpError } from '@/libs/HttpError'
-import { insertProduct } from '@/services/product.service'
+import { insertProduct, productDetail } from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
 
@@ -35,9 +35,21 @@ const addProduct = async (req: Request, res: Response) => {
     percent
   )
 
-  res.status(HttpStatusCode.ACCEPTED).json({
+  res.status(HttpStatusCode.CREATED).json({
+    message: 'Product information add success!!!',
     product: product
   })
 }
 
-export default addProduct
+const getProductDetail = async (req: Request, res: Response) => {
+  const productID = req.params.id
+  if (!productID) throw new HttpError('product is not valid')
+
+  const product = await productDetail(Number(productID))
+  res.status(HttpStatusCode.ACCEPTED).json({
+    message: `product with ID: ${productID} found`,
+    product: product
+  })
+}
+
+export { addProduct, getProductDetail }
