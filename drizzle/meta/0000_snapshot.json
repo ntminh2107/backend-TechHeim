@@ -1,5 +1,5 @@
 {
-  "id": "8101a471-d280-48eb-ba8d-42cb14c92094",
+  "id": "ca6d7829-66af-4cd6-a9d9-7d6f56de038f",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -14,24 +14,11 @@
           "primaryKey": true,
           "notNull": true
         },
-        "brand_id": {
-          "name": "brand_id",
+        "name": {
+          "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
-        },
-        "brand_name": {
-          "name": "brand_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "total_product": {
-          "name": "total_product",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
         }
       },
       "indexes": {},
@@ -57,24 +44,11 @@
           "primaryKey": true,
           "notNull": true
         },
-        "category_id": {
-          "name": "category_id",
+        "name": {
+          "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
-        },
-        "category_name": {
-          "name": "category_name",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "total_product": {
-          "name": "total_product",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": false,
-          "default": 0
         }
       },
       "indexes": {},
@@ -100,14 +74,14 @@
           "primaryKey": true,
           "notNull": true
         },
-        "product_ID": {
-          "name": "product_ID",
-          "type": "uuid",
+        "product_id": {
+          "name": "product_id",
+          "type": "serial",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "user_ID": {
-          "name": "user_ID",
+        "user_id": {
+          "name": "user_id",
           "type": "uuid",
           "primaryKey": false,
           "notNull": false
@@ -125,8 +99,8 @@
           "notNull": false,
           "default": "now()"
         },
-        "product_price": {
-          "name": "product_price",
+        "rating": {
+          "name": "rating",
           "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false
@@ -134,12 +108,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "comments_product_ID_product_id_fk": {
-          "name": "comments_product_ID_product_id_fk",
+        "comments_product_id_products_id_fk": {
+          "name": "comments_product_id_products_id_fk",
           "tableFrom": "comments",
-          "tableTo": "product",
+          "tableTo": "products",
           "columnsFrom": [
-            "product_ID"
+            "product_id"
           ],
           "columnsTo": [
             "id"
@@ -147,12 +121,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "comments_user_ID_user_id_fk": {
-          "name": "comments_user_ID_user_id_fk",
+        "comments_user_id_user_id_fk": {
+          "name": "comments_user_id_user_id_fk",
           "tableFrom": "comments",
           "tableTo": "user",
           "columnsFrom": [
-            "user_ID"
+            "user_id"
           ],
           "columnsTo": [
             "id"
@@ -164,62 +138,118 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-    "public.product": {
-      "name": "product",
+    "public.productPriceTags": {
+      "name": "productPriceTags",
       "schema": "",
       "columns": {
         "id": {
           "name": "id",
-          "type": "uuid",
+          "type": "serial",
           "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
+          "notNull": true
         },
-        "product_name": {
-          "name": "product_name",
-          "type": "varchar(255)",
+        "product_id": {
+          "name": "product_id",
+          "type": "serial",
           "primaryKey": false,
           "notNull": true
         },
-        "product_image": {
-          "name": "product_image",
-          "type": "varchar(255)",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "product_price": {
-          "name": "product_price",
+        "price": {
+          "name": "price",
           "type": "numeric(10, 2)",
           "primaryKey": false,
           "notNull": false
         },
-        "product_discount": {
-          "name": "product_discount",
+        "discount": {
+          "name": "discount",
           "type": "boolean",
           "primaryKey": false,
           "notNull": false,
           "default": false
         },
-        "product_percent": {
-          "name": "product_percent",
+        "percent": {
+          "name": "percent",
           "type": "integer",
           "primaryKey": false,
           "notNull": false
         },
-        "product_color": {
-          "name": "product_color",
+        "sale_price": {
+          "name": "sale_price",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "productPriceTags_product_id_products_id_fk": {
+          "name": "productPriceTags_product_id_products_id_fk",
+          "tableFrom": "productPriceTags",
+          "tableTo": "products",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "productPriceTags_id_unique": {
+          "name": "productPriceTags_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id"
+          ]
+        }
+      }
+    },
+    "public.products": {
+      "name": "products",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": true
         },
-        "product_category": {
-          "name": "product_category",
+        "image": {
+          "name": "image",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "color": {
+          "name": "color",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "rating": {
+          "name": "rating",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'0.00'"
+        },
+        "category_id": {
+          "name": "category_id",
           "type": "serial",
           "primaryKey": false,
           "notNull": true
         },
-        "product_brand": {
-          "name": "product_brand",
+        "brand_id": {
+          "name": "brand_id",
           "type": "serial",
           "primaryKey": false,
           "notNull": true
@@ -227,12 +257,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "product_product_category_categories_id_fk": {
-          "name": "product_product_category_categories_id_fk",
-          "tableFrom": "product",
+        "products_category_id_categories_id_fk": {
+          "name": "products_category_id_categories_id_fk",
+          "tableFrom": "products",
           "tableTo": "categories",
           "columnsFrom": [
-            "product_category"
+            "category_id"
           ],
           "columnsTo": [
             "id"
@@ -240,12 +270,12 @@
           "onDelete": "no action",
           "onUpdate": "no action"
         },
-        "product_product_brand_brands_id_fk": {
-          "name": "product_product_brand_brands_id_fk",
-          "tableFrom": "product",
+        "products_brand_id_brands_id_fk": {
+          "name": "products_brand_id_brands_id_fk",
+          "tableFrom": "products",
           "tableTo": "brands",
           "columnsFrom": [
-            "product_brand"
+            "brand_id"
           ],
           "columnsTo": [
             "id"
@@ -267,20 +297,20 @@
           "primaryKey": true,
           "notNull": true
         },
-        "product_ID": {
-          "name": "product_ID",
-          "type": "uuid",
+        "product_id": {
+          "name": "product_id",
+          "type": "serial",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
-        "specification_key": {
-          "name": "specification_key",
+        "key": {
+          "name": "key",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
         },
-        "specification_value": {
-          "name": "specification_value",
+        "value": {
+          "name": "value",
           "type": "varchar(255)",
           "primaryKey": false,
           "notNull": false
@@ -288,12 +318,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "specifications_product_ID_product_id_fk": {
-          "name": "specifications_product_ID_product_id_fk",
+        "specifications_product_id_products_id_fk": {
+          "name": "specifications_product_id_products_id_fk",
           "tableFrom": "specifications",
-          "tableTo": "product",
+          "tableTo": "products",
           "columnsFrom": [
-            "product_ID"
+            "product_id"
           ],
           "columnsTo": [
             "id"
@@ -312,6 +342,28 @@
           ]
         }
       }
+    },
+    "public.role": {
+      "name": "role",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {}
     },
     "public.user": {
       "name": "user",
@@ -348,6 +400,13 @@
           "primaryKey": false,
           "notNull": false
         },
+        "role_id": {
+          "name": "role_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "default": 2
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp",
@@ -364,7 +423,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "user_role_id_role_id_fk": {
+          "name": "user_role_id_role_id_fk",
+          "tableFrom": "user",
+          "tableTo": "role",
+          "columnsFrom": [
+            "role_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     }

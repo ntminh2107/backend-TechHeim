@@ -35,19 +35,12 @@ export const insertProduct = async (
   if (existedCategory.length === 0) {
     const newCategory = await db
       .insert(tblCategories)
-      .values({ categoryName: category, totalProducts: 1 })
+      .values({ categoryName: category })
       .returning()
 
     categoryID = newCategory[0].id
   } else {
     categoryID = existedCategory[0].id
-
-    await db
-      .update(tblCategories)
-      .set({
-        totalProducts: (existedCategory[0].totalProducts as number) + 1
-      })
-      .where(eq(tblCategories.categoryName, category))
   }
 
   //check existed Brand
@@ -59,18 +52,11 @@ export const insertProduct = async (
   if (existedBrand.length === 0) {
     const newBrand = await db
       .insert(tblBrands)
-      .values({ brandName: brand, totalProducts: 1 })
+      .values({ brandName: brand })
       .returning()
     brandID = newBrand[0].id
   } else {
     brandID = existedBrand[0].id
-
-    await db
-      .update(tblBrands)
-      .set({
-        totalProducts: (existedBrand[0].totalProducts as number) + 1
-      })
-      .where(eq(tblBrands.brandName, brand))
   }
 
   //inserted product
@@ -81,9 +67,11 @@ export const insertProduct = async (
 
   const productID = insertedProduct[0].id
 
-  const salePrice = (+price - (1 - (percent as number) / 100)).toString()
+  const salePrice = (Number(price) * (1 - (percent as number) / 100))
+    .toFixed(2)
+    .toString()
 
-  //insert product price
+  //insert product price...
   const insertedPrice = await db
     .insert(tblProductPriceTag)
     .values({
@@ -100,7 +88,12 @@ export const insertProduct = async (
     specifications.map(async (spec) => {
       await db
         .insert(tblSpecification)
-        .values({ productID, key: spec.key, value: spec.value }).returning
+        .values({
+          productID,
+          key: spec.key,
+          value: spec.value
+        })
+        .returning()
     })
   )
 
@@ -119,5 +112,60 @@ export const insertProduct = async (
     return productResult
   } else {
     throw new Error('insert product failed, pls try again')
+  }
+}
+
+export const productDetail = async (
+  productID: number
+): Promise<Product | string> => {
+  const db = getDbClient()
+
+  const productDetail = await db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName
+    })
+    .from(tblProducts)
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .where(eq(tblProducts.id, productID))
+    .limit(1)
+
+  if (!productDetail) throw new Error('No Product found with this ID')
+
+  const priceTag = await db
+    .select()
+    .from(tblProductPriceTag)
+    .where(eq(tblProductPriceTag.productID, productID))
+    .limit(1)
+
+  if (!priceTag)
+    throw new Error('something wrong when trying to get price tag for product')
+
+  const specifications = await db
+    .select({ key: tblSpecification.key, value: tblSpecification.value })
+    .from(tblSpecification)
+    .where(eq(tblSpecification.productID, productID))
+
+  const productResult: Product = {
+    id: productDetail[0].id,
+    name: productDetail[0].name,
+    image: productDetail[0].image as string,
+    color: productDetail[0].color,
+    rating: Number(productDetail[0].rating),
+    category: productDetail[0].category as string,
+    brand: productDetail[0].brand as string,
+    specifications: specifications as { key: string; value: string }[],
+    price: priceTag[0] as PriceTag
+  }
+  if (!productResult) {
+    throw new Error('something wrong when trying to render product detail')
+  } else {
+    return productResult
   }
 }

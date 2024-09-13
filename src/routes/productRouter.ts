@@ -1,4 +1,4 @@
-import addProduct from '@/controllers/product.controller'
+import { addProduct, getProductDetail } from '@/controllers/product.controller'
 import authentication from '@/middlewares/authentication'
 import { authorize } from '@/middlewares/authorization'
 import wrap from '@/utils/wrapError'
@@ -10,6 +10,8 @@ const getProductRouter = () => {
   router.use(authentication)
 
   router.post('/add', authorize('admin'), wrap(addProduct))
+
+  router.get('/:id', wrap(getProductDetail))
 
   return router
 }
