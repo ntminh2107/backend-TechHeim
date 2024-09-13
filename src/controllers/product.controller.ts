@@ -1,5 +1,9 @@
 import { HttpError } from '@/libs/HttpError'
-import { insertProduct, productDetail } from '@/services/product.service'
+import {
+  filteredbyBrand,
+  insertProduct,
+  productDetail
+} from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
 
@@ -43,7 +47,11 @@ const addProduct = async (req: Request, res: Response) => {
 
 const getProductDetail = async (req: Request, res: Response) => {
   const productID = req.params.id
-  if (!productID) throw new HttpError('product is not valid')
+  if (!productID)
+    throw new HttpError(
+      'something wents wrong!!! pls try again',
+      HttpStatusCode.NOT_FOUND
+    )
 
   const product = await productDetail(Number(productID))
   res.status(HttpStatusCode.ACCEPTED).json({
@@ -52,4 +60,39 @@ const getProductDetail = async (req: Request, res: Response) => {
   })
 }
 
-export { addProduct, getProductDetail }
+const listFilteredByBrand = async (req: Request, res: Response) => {
+  const brand = req.params.brand
+  if (!brand)
+    throw new HttpError(
+      'something wents wrong!!! pls try again',
+      HttpStatusCode.NOT_FOUND
+    )
+
+  const product = await filteredbyBrand(brand)
+  res.status(HttpStatusCode.ACCEPTED).json({
+    message: `list of product from brand : ${brand}`,
+    product: product
+  })
+}
+
+const listFilteredByCategory = async (req: Request, res: Response) => {
+  const category = req.params.category
+  if (!category)
+    throw new HttpError(
+      'something wents wrong!!! pls try again',
+      HttpStatusCode.NOT_FOUND
+    )
+
+  const product = await filteredbyBrand(category)
+  res.status(HttpStatusCode.ACCEPTED).json({
+    message: `list of product from category : ${category}`,
+    product: product
+  })
+}
+
+export {
+  addProduct,
+  getProductDetail,
+  listFilteredByBrand,
+  listFilteredByCategory
+}

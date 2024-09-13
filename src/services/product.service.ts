@@ -7,7 +7,7 @@ import {
   tblSpecification
 } from '@/models/product.schema'
 import { PriceTag, Product } from '@/types/product'
-import { eq } from 'drizzle-orm'
+import { SQL, and, between, eq, gte, lte } from 'drizzle-orm'
 
 export const insertProduct = async (
   name: string,
@@ -168,4 +168,127 @@ export const productDetail = async (
   } else {
     return productResult
   }
+}
+
+export const filteredbyBrand = async (
+  brand: string
+): Promise<Product[] | string> => {
+  const db = getDbClient()
+
+  const filteredProduct = await db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName
+    })
+    .from(tblProducts)
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .where(eq(tblBrands.brandName, brand))
+
+  if (filteredProduct.length === 0) return 'no product found'
+
+  const result: Product[] = filteredProduct.map((product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image as string,
+    color: product.color,
+    rating: Number(product.rating),
+    category: product.category as string,
+    brand: product.brand as string
+  }))
+
+  return result
+}
+
+export const filteredbyCategory = async (
+  category: string,
+  queryParams: { [key: string]: string }
+): Promise<Product[] | string> => {
+  const db = getDbClient()
+
+  const filteredProduct = await db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName
+    })
+    .from(tblProducts)
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .where(eq(tblCategories.categoryName, category))
+
+  if (filteredProduct.length === 0) return 'no product found'
+
+  const result: Product[] = filteredProduct.map((product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image as string,
+    color: product.color,
+    rating: Number(product.rating),
+    category: product.category as string,
+    brand: product.brand as string
+  }))
+
+  return result
+}
+
+/*TODO: do a query that need to filtered spec and min-max price*/
+export const filteredByQueryParams = async (
+  category: string,
+  queryParams: { [key: string]: string }
+): Promise<Product | string> => {
+  const db = getDbClient()
+
+  const min = queryParams.min ? Number(queryParams.min) : undefined
+  const max = queryParams.max ? Number(queryParams.max) : undefined
+
+  const specFilters = { ...queryParams }
+  delete specFilters.min
+  delete specFilters.max
+
+  const baseCondition = [eq(tblCategories.categoryName, category)]
+
+  if (Object.keys(specFilters).length > 0) {
+    const specConditions = Object.entries(specFilters).map(([key, value]) => {
+      return and(
+        eq(tblSpecification.key, key),
+        eq(tblSpecification.value, value)
+      )
+    })
+    baseCondition.push(and(...specConditions) as SQL<unknown>)
+  }
+
+  // if (min !== undefined && max !== undefined) {
+  //   baseCondition.push(between(Number(tblProductPriceTag.price), min, max))
+  // } else if (min !== undefined) {
+  //   baseCondition.push(Number(tblProductPriceTag.price).(Number(min)))
+  // } else if (max !== undefined) {
+  //   baseCondition.push(Number(tblProductPriceTag.price).lte(max))
+  // }
+
+  let queryResult = db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName
+    })
+    .from(tblProducts)
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .where(eq(tblCategories.categoryName, category))
+
+  return ''
 }
