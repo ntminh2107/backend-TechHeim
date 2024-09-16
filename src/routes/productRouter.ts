@@ -4,7 +4,6 @@ import {
   getProductDetail,
   listFilteredByBrand
 } from '@/controllers/product.controller'
-import authentication from '@/middlewares/authentication'
 import { authorize } from '@/middlewares/authorization'
 import wrap from '@/utils/wrapError'
 import { Router } from 'express'
@@ -12,19 +11,15 @@ import { Router } from 'express'
 const getProductRouter = () => {
   const router = Router()
 
+  /* list of product by category or brand */
+  router.get('/brand/:brand', wrap(listFilteredByBrand))
   router.get('/category/:category', wrap(filteredProduct))
-
-  router.use(authentication)
-
-  /* add a product */
-  router.post('/add', authorize('admin'), wrap(addProduct))
 
   /* product detail */
   router.get('/detail/:id', wrap(getProductDetail))
 
-  /* list of product by category or brand */
-  router.get('/brand/:brand', wrap(listFilteredByBrand))
-  // router.get('/category/:category', wrap(listFilteredByCategory))
+  /* add a product */
+  router.post('/add', authorize('admin'), wrap(addProduct))
 
   return router
 }
