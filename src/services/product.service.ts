@@ -205,7 +205,7 @@ export const filteredbyBrand = async (
   return result
 }
 
-/*TODO: do a query that need to filtered spec and min-max price*/
+/*TODO: do a pagination*/
 export const filteredbycategory = async (
   category: string,
   queryParams: { [key: string]: string }
@@ -238,7 +238,7 @@ export const filteredbycategory = async (
     baseCondition.push(lte(tblProductPriceTag.price, max))
   }
 
-  const queryResult = await db
+  const queryResult = db
     .select({
       id: tblProducts.id,
       name: tblProducts.name,
@@ -258,6 +258,17 @@ export const filteredbycategory = async (
     )
     .leftJoin(tblSpecification, eq(tblSpecification.productID, tblProducts.id))
     .where(and(...baseCondition))
+    .groupBy(
+      tblProducts.id,
+      tblProducts.name,
+      tblProducts.image,
+      tblProducts.color,
+      tblProducts.rating,
+      tblCategories.categoryName,
+      tblBrands.brandName,
+      tblProductPriceTag.price,
+      tblProductPriceTag.id
+    )
 
   const result: Product[] = (await queryResult).map((product) => ({
     id: product.id,
