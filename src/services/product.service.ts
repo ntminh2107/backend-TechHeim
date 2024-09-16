@@ -295,3 +295,35 @@ export const filteredbycategory = async (
 
   return result
 }
+
+export const filteredFieldOptions = async (
+  category: string
+): Promise<{ [key: string]: string[] }> => {
+  const db = getDbClient()
+
+  const queryResult = await db
+    .select({
+      key: tblSpecification.key,
+      value: tblSpecification.value
+    })
+    .from(tblSpecification)
+    .innerJoin(tblProducts, eq(tblProducts.id, tblSpecification.productID))
+    .innerJoin(tblCategories, eq(tblCategories.id, tblProducts.categoryID))
+    .where(sql`LOWER(${tblCategories.categoryName}) = ${category}`)
+    .groupBy(tblSpecification.key, tblSpecification.value)
+
+  const result: { [key: string]: string[] } = {}
+
+  queryResult.forEach((spec) => {
+    const key = spec.key as string
+    const value = spec.value as string
+    if (!result[key]) {
+      result[key] = []
+    }
+    if (!result[key].includes(value)) {
+      result[key].push(value)
+    }
+  })
+
+  return result
+}
