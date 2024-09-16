@@ -3,7 +3,8 @@ import {
   filteredbycategory,
   filteredbyBrand,
   insertProduct,
-  productDetail
+  productDetail,
+  filteredFieldOptions
 } from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
@@ -110,10 +111,27 @@ const filteredProduct = async (req: Request, res: Response) => {
   })
 }
 
+const specFilterCtrl = async (req: Request, res: Response) => {
+  const category = req.params.category
+
+  if (!category)
+    throw new HttpError(
+      'something wents wrong!!! pls try again',
+      HttpStatusCode.NOT_FOUND
+    )
+
+  const filterOptions = await filteredFieldOptions(category)
+  res.status(HttpStatusCode.ACCEPTED).json({
+    message: 'Options for filtering by spec:',
+    filterOptions: filterOptions
+  })
+}
+
 export {
   addProduct,
   getProductDetail,
   listFilteredByBrand,
   listFilteredByCategory,
-  filteredProduct
+  filteredProduct,
+  specFilterCtrl
 }

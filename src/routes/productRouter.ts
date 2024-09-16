@@ -2,7 +2,8 @@ import {
   addProduct,
   filteredProduct,
   getProductDetail,
-  listFilteredByBrand
+  listFilteredByBrand,
+  specFilterCtrl
 } from '@/controllers/product.controller'
 import authentication from '@/middlewares/authentication'
 import { authorize } from '@/middlewares/authorization'
@@ -15,6 +16,8 @@ const getProductRouter = () => {
   /* list of product by category or brand */
   router.get('/brand/:brand', wrap(listFilteredByBrand))
   router.get('/category/:category', wrap(filteredProduct))
+
+  router.get('/spec/:category', wrap(specFilterCtrl))
 
   /* product detail */
   router.get('/detail/:id', wrap(getProductDetail))
