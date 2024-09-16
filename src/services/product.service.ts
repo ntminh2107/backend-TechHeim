@@ -7,7 +7,7 @@ import {
   tblSpecification
 } from '@/models/product.schema'
 import { PriceTag, Product } from '@/types/product'
-import { SQL, and, between, eq, gte, lte } from 'drizzle-orm'
+import { SQL, and, between, eq, gte, lte, sql } from 'drizzle-orm'
 
 export const insertProduct = async (
   name: string,
@@ -214,17 +214,27 @@ export const filteredbycategory = async (
 
   const min = queryParams.min
   const max = queryParams.max
+  const limit = 3
+  const page = Number(queryParams.page) || 1
+  const offset = (page - 1) * limit
   const specFilters = { ...queryParams }
+
   delete specFilters.min
   delete specFilters.max
-
-  const baseCondition = [eq(tblCategories.categoryName, category)]
+  delete specFilters.page
+  delete specFilters.limit
+  const baseCondition = [
+    // eq(tblCategories.categoryName, category),
+    sql`LOWER(${tblCategories.categoryName}) = ${category}`
+  ]
 
   if (Object.keys(specFilters).length > 0) {
     const specConditions = Object.entries(specFilters).map(([key, value]) => {
       return and(
-        eq(tblSpecification.key, key),
-        eq(tblSpecification.value, value)
+        // eq(tblSpecification.key, key),
+        // eq(tblSpecification.value, value)
+        sql`LOWER(${tblSpecification.key}) = ${key}`,
+        sql`LOWER(${tblSpecification.value}) = ${value}`
       )
     })
     baseCondition.push(and(...specConditions) as SQL<unknown>)
@@ -269,6 +279,8 @@ export const filteredbycategory = async (
       tblProductPriceTag.price,
       tblProductPriceTag.id
     )
+    .limit(limit)
+    .offset(offset)
 
   const result: Product[] = (await queryResult).map((product) => ({
     id: product.id,
