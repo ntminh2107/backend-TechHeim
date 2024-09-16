@@ -1,8 +1,8 @@
 import {
   addProduct,
+  filteredProduct,
   getProductDetail,
-  listFilteredByBrand,
-  listFilteredByCategory
+  listFilteredByBrand
 } from '@/controllers/product.controller'
 import authentication from '@/middlewares/authentication'
 import { authorize } from '@/middlewares/authorization'
@@ -11,6 +11,8 @@ import { Router } from 'express'
 
 const getProductRouter = () => {
   const router = Router()
+
+  router.get('/category/:category', wrap(filteredProduct))
 
   router.use(authentication)
 
@@ -22,7 +24,7 @@ const getProductRouter = () => {
 
   /* list of product by category or brand */
   router.get('/brand/:brand', wrap(listFilteredByBrand))
-  router.get('/category/:category', wrap(listFilteredByCategory))
+  // router.get('/category/:category', wrap(listFilteredByCategory))
 
   return router
 }

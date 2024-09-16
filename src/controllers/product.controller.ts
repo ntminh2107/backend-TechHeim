@@ -1,5 +1,6 @@
 import { HttpError } from '@/libs/HttpError'
 import {
+  filteredbycategory,
   filteredbyBrand,
   insertProduct,
   productDetail
@@ -90,9 +91,29 @@ const listFilteredByCategory = async (req: Request, res: Response) => {
   })
 }
 
+const filteredProduct = async (req: Request, res: Response) => {
+  const category = req.params.category
+
+  const queryParams = req.query as { [key: string]: string }
+
+  if (!category || !queryParams)
+    throw new HttpError(
+      'something wents wrong!!! pls try again',
+      HttpStatusCode.NOT_FOUND
+    )
+
+  const productList = await filteredbycategory(category, queryParams)
+
+  res.status(HttpStatusCode.ACCEPTED).json({
+    message: 'product filter list :',
+    products: productList
+  })
+}
+
 export {
   addProduct,
   getProductDetail,
   listFilteredByBrand,
-  listFilteredByCategory
+  listFilteredByCategory,
+  filteredProduct
 }

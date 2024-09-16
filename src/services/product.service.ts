@@ -205,52 +205,15 @@ export const filteredbyBrand = async (
   return result
 }
 
-export const filteredbyCategory = async (
-  category: string,
-  queryParams: { [key: string]: string }
-): Promise<Product[] | string> => {
-  const db = getDbClient()
-
-  const filteredProduct = await db
-    .select({
-      id: tblProducts.id,
-      name: tblProducts.name,
-      image: tblProducts.image,
-      color: tblProducts.color,
-      rating: tblProducts.rating,
-      category: tblCategories.categoryName,
-      brand: tblBrands.brandName
-    })
-    .from(tblProducts)
-    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
-    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
-    .where(eq(tblCategories.categoryName, category))
-
-  if (filteredProduct.length === 0) return 'no product found'
-
-  const result: Product[] = filteredProduct.map((product) => ({
-    id: product.id,
-    name: product.name,
-    image: product.image as string,
-    color: product.color,
-    rating: Number(product.rating),
-    category: product.category as string,
-    brand: product.brand as string
-  }))
-
-  return result
-}
-
 /*TODO: do a query that need to filtered spec and min-max price*/
-export const filteredByQueryParams = async (
+export const filteredbycategory = async (
   category: string,
   queryParams: { [key: string]: string }
-): Promise<Product | string> => {
+): Promise<Product[]> => {
   const db = getDbClient()
 
-  const min = queryParams.min ? Number(queryParams.min) : undefined
-  const max = queryParams.max ? Number(queryParams.max) : undefined
-
+  const min = queryParams.min
+  const max = queryParams.max
   const specFilters = { ...queryParams }
   delete specFilters.min
   delete specFilters.max
@@ -267,15 +230,15 @@ export const filteredByQueryParams = async (
     baseCondition.push(and(...specConditions) as SQL<unknown>)
   }
 
-  // if (min !== undefined && max !== undefined) {
-  //   baseCondition.push(between(Number(tblProductPriceTag.price), min, max))
-  // } else if (min !== undefined) {
-  //   baseCondition.push(Number(tblProductPriceTag.price).(Number(min)))
-  // } else if (max !== undefined) {
-  //   baseCondition.push(Number(tblProductPriceTag.price).lte(max))
-  // }
+  if (min !== undefined && max !== undefined) {
+    baseCondition.push(between(tblProductPriceTag.price, min, max))
+  } else if (min !== undefined) {
+    baseCondition.push(gte(tblProductPriceTag.price, min))
+  } else if (max !== undefined) {
+    baseCondition.push(lte(tblProductPriceTag.price, max))
+  }
 
-  let queryResult = db
+  const queryResult = await db
     .select({
       id: tblProducts.id,
       name: tblProducts.name,
@@ -283,12 +246,29 @@ export const filteredByQueryParams = async (
       color: tblProducts.color,
       rating: tblProducts.rating,
       category: tblCategories.categoryName,
-      brand: tblBrands.brandName
+      brand: tblBrands.brandName,
+      tblProductPriceTag
     })
     .from(tblProducts)
     .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
     .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
-    .where(eq(tblCategories.categoryName, category))
+    .leftJoin(
+      tblProductPriceTag,
+      eq(tblProductPriceTag.productID, tblProducts.id)
+    )
+    .leftJoin(tblSpecification, eq(tblSpecification.productID, tblProducts.id))
+    .where(and(...baseCondition))
 
-  return ''
+  const result: Product[] = (await queryResult).map((product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image as string,
+    color: product.color as string,
+    rating: Number(product.rating),
+    category: product.category as string,
+    brand: product.brand as string,
+    price: product.tblProductPriceTag as PriceTag
+  }))
+
+  return result
 }
