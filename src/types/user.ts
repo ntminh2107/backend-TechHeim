@@ -13,3 +13,13 @@ export type Role = {
   id: number
   role: string
 }
+
+export type Address = {
+  id: number
+  userID: string
+  name: string
+  address: string
+  district: string
+  city: string
+  country: string
+}

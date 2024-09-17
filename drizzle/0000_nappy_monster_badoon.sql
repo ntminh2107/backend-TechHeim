@@ -1,3 +1,46 @@
+CREATE TABLE IF NOT EXISTS "cart" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid,
+	"status" varchar(255) DEFAULT 'cart'
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "cart_items" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"cart_id" uuid,
+	"product_id" integer,
+	"quantity" integer DEFAULT 1,
+	"price" numeric(10, 2)
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "order" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" uuid,
+	"address_id" integer,
+	"status" varchar(255) DEFAULT 'pending',
+	"total_price" numeric(10, 2),
+	"has_paid" numeric(10, 2),
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "order_item" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"order_id" uuid,
+	"product_id" integer NOT NULL,
+	"quantity" integer NOT NULL,
+	"price" numeric(10, 2)
+);
+--> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "transaction" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"order_id" uuid,
+	"type" varchar(255),
+	"deposit" numeric(10, 2),
+	"status" varchar(255) DEFAULT 'created',
+	"created_at" timestamp DEFAULT now(),
+	"updated_at" timestamp DEFAULT now()
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "brands" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" varchar(255),
@@ -47,6 +90,15 @@ CREATE TABLE IF NOT EXISTS "specifications" (
 	CONSTRAINT "specifications_id_unique" UNIQUE("id")
 );
 --> statement-breakpoint
+CREATE TABLE IF NOT EXISTS "address" (
+	"id" serial PRIMARY KEY NOT NULL,
+	"user_id" varchar(255),
+	"address" varchar(255),
+	"district" varchar(255),
+	"city" varchar(255),
+	"country" varchar(255)
+);
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS "role" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"role" varchar(255)
@@ -62,6 +114,48 @@ CREATE TABLE IF NOT EXISTS "user" (
 	"created_at" timestamp DEFAULT now() NOT NULL,
 	"updated_at" timestamp DEFAULT now() NOT NULL
 );
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "cart" ADD CONSTRAINT "cart_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_cart_id_cart_id_fk" FOREIGN KEY ("cart_id") REFERENCES "public"."cart"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "cart_items" ADD CONSTRAINT "cart_items_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "order" ADD CONSTRAINT "order_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "order_item" ADD CONSTRAINT "order_item_order_id_order_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."order"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "order_item" ADD CONSTRAINT "order_item_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
+--> statement-breakpoint
+DO $$ BEGIN
+ ALTER TABLE "transaction" ADD CONSTRAINT "transaction_order_id_order_id_fk" FOREIGN KEY ("order_id") REFERENCES "public"."order"("id") ON DELETE no action ON UPDATE no action;
+EXCEPTION
+ WHEN duplicate_object THEN null;
+END $$;
 --> statement-breakpoint
 DO $$ BEGIN
  ALTER TABLE "comments" ADD CONSTRAINT "comments_product_id_products_id_fk" FOREIGN KEY ("product_id") REFERENCES "public"."products"("id") ON DELETE no action ON UPDATE no action;
