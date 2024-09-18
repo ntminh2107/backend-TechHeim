@@ -10,7 +10,7 @@ const addToCartCtrl = async (req: Request, res: Response) => {
   if (!userID || !productID)
     throw new HttpError(
       'something wrong,pls try again',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_ALLOWED
     )
   const newCart = await addToCart(productID, userID)
 
@@ -25,7 +25,7 @@ const getCart = async (req: Request, res: Response) => {
   if (!userID)
     throw new HttpError(
       'something wrong,pls try again',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_ALLOWED
     )
   const getCart = await getCartUser(userID)
   res.status(HttpStatusCode.ACCEPTED).json({ message: 'cart detail', getCart })
