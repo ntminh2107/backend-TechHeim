@@ -52,7 +52,7 @@ const getProductDetail = async (req: Request, res: Response) => {
   if (!productID)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.NOT_FOUND
+      HttpStatusCode.INTERNAL_SERVER_ERROR
     )
 
   const product = await productDetail(Number(productID))
@@ -67,7 +67,7 @@ const listFilteredByBrand = async (req: Request, res: Response) => {
   if (!brand)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.NOT_FOUND
+      HttpStatusCode.INTERNAL_SERVER_ERROR
     )
 
   const product = await filteredbyBrand(brand)
@@ -82,7 +82,7 @@ const listFilteredByCategory = async (req: Request, res: Response) => {
   if (!category)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.NOT_FOUND
+      HttpStatusCode.INTERNAL_SERVER_ERROR
     )
 
   const product = await filteredbyBrand(category)
@@ -100,7 +100,7 @@ const filteredProduct = async (req: Request, res: Response) => {
   if (!category || !queryParams)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.NOT_FOUND
+      HttpStatusCode.INTERNAL_SERVER_ERROR
     )
 
   const productList = await filteredbycategory(category, queryParams)
@@ -117,7 +117,7 @@ const specFilterCtrl = async (req: Request, res: Response) => {
   if (!category)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.NOT_FOUND
+      HttpStatusCode.INTERNAL_SERVER_ERROR
     )
 
   const filterOptions = await filteredFieldOptions(category)
