@@ -12,25 +12,27 @@ export const insertAddress = async (
   country: string
 ): Promise<Address | string> => {
   const db = getDbClient()
-  const checkUser = await db
-    .select({ id: tblUser.id })
-    .from(tblUser)
-    .where(eq(tblUser.id, userID))
-    .limit(1)
-  if (checkUser.length === 0)
-    throw new Error('can not found user, pls try again')
+  return await db.transaction(async (trx) => {
+    const checkUser = await trx
+      .select({ id: tblUser.id })
+      .from(tblUser)
+      .where(eq(tblUser.id, userID))
+      .limit(1)
+      .then((rows) => rows[0])
+    if (!checkUser) throw new Error('can not found user, pls try again')
 
-  const resAddress = await db
-    .insert(tblAddress)
-    .values({
-      userID,
-      name,
-      address,
-      district,
-      city,
-      country
-    })
-    .returning()
-  if (!resAddress) throw new Error('something wrong happen')
-  return resAddress[0] as Address
+    const [resAddress] = await trx
+      .insert(tblAddress)
+      .values({
+        userID,
+        name,
+        address,
+        district,
+        city,
+        country
+      })
+      .returning()
+    if (!resAddress) throw new Error('something wrong happen')
+    return resAddress as Address
+  })
 }

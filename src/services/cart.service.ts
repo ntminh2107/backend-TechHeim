@@ -5,119 +5,120 @@ import { tblUser } from '@/models/user.schema'
 import { Cart, CartItems } from '@/types/cart'
 import { and, eq } from 'drizzle-orm'
 
+/*TODO: revert all services into a transaction */
 export const addToCart = async (
   productID: number,
   userID: string
 ): Promise<string> => {
   const db = getDbClient()
-  const checkUser = await db
-    .select()
-    .from(tblUser)
-    .where(eq(tblUser.id, userID))
-    .limit(1)
-  if (checkUser.length === 0)
-    throw new Error('no user found with this id, pls try again')
 
-  let checkCart = await db
-    .select()
-    .from(tblCart)
-    .where(eq(tblCart.userID, userID))
-    .limit(1)
-  if (checkCart.length === 0) {
-    const newCart = await db
-      .insert(tblCart)
-      .values({ userID: userID })
-      .returning()
-    checkCart = newCart
-  }
-  const cartID = checkCart[0].id
+  return await db.transaction(async (trx) => {
+    const [userAndCart] = await trx
+      .select({
+        user: tblUser,
+        cart: tblCart
+      })
+      .from(tblUser)
+      .leftJoin(tblCart, eq(tblCart.userID, tblUser.id))
+      .where(eq(tblUser.id, userID))
+      .limit(1)
 
-  let productPrice
+    if (!userAndCart) {
+      throw new Error('User not found')
+    }
 
-  const checkPrice = await db
-    .select({
-      price: tblProductPriceTag.price,
-      discount: tblProductPriceTag.discount,
-      salePrice: tblProductPriceTag.salePrice
-    })
-    .from(tblProductPriceTag)
-    .where(eq(tblProductPriceTag.productID, productID))
-    .limit(1)
-  if (checkPrice.length == 0)
-    throw new Error('price from this product cannot found')
-  else if (checkPrice[0].discount === true) {
-    productPrice = checkPrice[0].salePrice
-  } else {
-    productPrice = checkPrice[0].price
-  }
+    let cartID: string
+    if (!userAndCart.cart) {
+      const [newCart] = await trx
+        .insert(tblCart)
+        .values({ userID })
+        .returning({ id: tblCart.id })
+      cartID = newCart.id
+    } else {
+      cartID = userAndCart.cart.id
+    }
 
-  const checkItem = await db
-    .select({
-      id: tblCartItems.id,
-      name: tblProducts.name,
-      image: tblProducts.image,
-      quantity: tblCartItems.quantity,
-      price: tblCartItems.price
-    })
-    .from(tblCartItems)
-    .innerJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
-    .where(
-      and(
-        eq(tblCartItems.productID, productID),
-        eq(tblCartItems.cartID, cartID)
+    const [priceAndItem] = await trx
+      .select({
+        price: tblProductPriceTag.price,
+        discount: tblProductPriceTag.discount,
+        salePrice: tblProductPriceTag.salePrice,
+        cartItem: tblCartItems
+      })
+      .from(tblProductPriceTag)
+      .leftJoin(
+        tblCartItems,
+        and(
+          eq(tblCartItems.productID, tblProductPriceTag.productID),
+          eq(tblCartItems.cartID, cartID)
+        )
       )
-    )
-    .limit(1)
-  if (checkItem.length === 0) {
-    await db
-      .insert(tblCartItems)
-      .values({ productID, cartID, price: productPrice })
-      .returning()
-  } else {
-    const itemQuantity = (checkItem[0].quantity as number) + 1
-    await db.update(tblCartItems).set({ quantity: itemQuantity }).returning()
-  }
+      .where(eq(tblProductPriceTag.productID, productID))
+      .limit(1)
 
-  return 'add to cart success'
+    if (!priceAndItem) {
+      throw new Error('Product price not found')
+    }
+
+    const productPrice = priceAndItem.discount
+      ? priceAndItem.salePrice
+      : priceAndItem.price
+
+    if (!priceAndItem.cartItem) {
+      await trx
+        .insert(tblCartItems)
+        .values({ productID, cartID, price: productPrice })
+    } else {
+      await trx
+        .update(tblCartItems)
+        .set({ quantity: (priceAndItem.cartItem.quantity as number) + 1 })
+        .where(eq(tblCartItems.id, priceAndItem.cartItem.id))
+    }
+
+    return 'Item added to cart successfully'
+  })
 }
 
 export const getCartUser = async (userID: string): Promise<Cart | string> => {
   const db = getDbClient()
-  const checkUser = await db
-    .select({ id: tblUser.id })
-    .from(tblUser)
-    .where(eq(tblUser.id, userID))
-  if (checkUser.length === 0) throw new Error('something wrong happens')
+  return await db.transaction(async (trx) => {
+    const [checkUser] = await trx
+      .select({ id: tblUser.id })
+      .from(tblUser)
+      .where(eq(tblUser.id, userID))
+    if (!checkUser) throw new Error('something wrong happens')
 
-  const cartRs = await db
-    .select({
-      id: tblCart.id,
-      userID: tblUser.id,
-      status: tblCart.status
-    })
-    .from(tblCart)
-    .innerJoin(tblUser, eq(tblUser.id, tblCart.userID))
-    .where(eq(tblUser.id, userID))
-    .limit(1)
+    const cartRs = await trx
+      .select({
+        id: tblCart.id,
+        userID: tblUser.id,
+        status: tblCart.status
+      })
+      .from(tblCart)
+      .innerJoin(tblUser, eq(tblUser.id, tblCart.userID))
+      .where(eq(tblUser.id, userID))
+      .limit(1)
+      .then((rows) => rows[0])
 
-  const cartItemsRs = await db
-    .select({
-      id: tblCartItems.id,
-      name: tblProducts.name,
-      image: tblProducts.image,
-      quantity: tblCartItems.quantity,
-      price: tblCartItems.price
-    })
-    .from(tblCartItems)
-    .innerJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
-    .where(eq(tblCartItems.cartID, cartRs[0].id))
+    const cartItemsRs = await trx
+      .select({
+        id: tblCartItems.id,
+        name: tblProducts.name,
+        image: tblProducts.image,
+        quantity: tblCartItems.quantity,
+        price: tblCartItems.price
+      })
+      .from(tblCartItems)
+      .innerJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
+      .where(eq(tblCartItems.cartID, cartRs.id))
 
-  const result: Cart = {
-    id: cartRs[0].id,
-    userID: cartRs[0].userID as string,
-    status: cartRs[0].status as string,
-    cartItems: cartItemsRs as CartItems[]
-  }
+    const result: Cart = {
+      id: cartRs.id,
+      userID: cartRs.userID as string,
+      status: cartRs.status as string,
+      cartItems: cartItemsRs as CartItems[]
+    }
 
-  return result
+    return result
+  })
 }
