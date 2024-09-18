@@ -8,6 +8,7 @@ import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import { generateAccessToken } from '@/services/jwt.service'
 import { HttpError } from '@/libs/HttpError'
+import { insertAddress } from '@/services/user.service'
 
 const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, phoneNumber } = req.body
@@ -73,4 +74,27 @@ const getUser = async (req: Request, res: Response) => {
   })
 }
 
-export { registerUser, login, getUser }
+const addAddress = async (req: Request, res: Response) => {
+  const userID = req.user?.id
+  const { name, address, district, city, country } = req.body
+  if (!userID)
+    throw new HttpError(
+      'no user found with this ID',
+      HttpStatusCode.INTERNAL_SERVER_ERROR
+    )
+  const result = await insertAddress(
+    userID,
+    name,
+    address,
+    district,
+    city,
+    country
+  )
+
+  return res.status(HttpStatusCode.CREATED).json({
+    message: 'add address success',
+    result: result
+  })
+}
+
+export { registerUser, login, getUser, addAddress }

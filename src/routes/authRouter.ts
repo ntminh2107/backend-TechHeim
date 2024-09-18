@@ -1,4 +1,9 @@
-import { getUser, login, registerUser } from '@/controllers/auth.controller'
+import {
+  addAddress,
+  getUser,
+  login,
+  registerUser
+} from '@/controllers/auth.controller'
 import authentication from '@/middlewares/authentication'
 import { authorize } from '@/middlewares/authorization'
 import HttpStatusCode from '@/utils/httpStatusCode'
@@ -35,6 +40,8 @@ const getAuthRouter = () => {
         .json({ message: `welcome ${req.user?.role}` })
     })
   )
+
+  router.post('/address/add', wrap(addAddress))
 
   return router
 }
