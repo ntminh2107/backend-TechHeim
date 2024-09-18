@@ -30,7 +30,7 @@ const login = async (req: Request, res: Response) => {
   if (!user) {
     throw new HttpError(
       "user doesn't exist, pls try again!!",
-      HttpStatusCode.NOT_FOUND
+      HttpStatusCode.INTERNAL_SERVER_ERROR
     )
   }
 

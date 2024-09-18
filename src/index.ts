@@ -13,14 +13,13 @@ const app = express()
 
 const start = async () => {
   app.use(applyMiddlewares())
-
+  app.use(errorHandler)
   /*Health check */
   app.get('/healthcheck', (_, res) =>
     res.sendStatus(HttpStatusCode.ACCEPTED).json({ message: 'healthy' })
   )
 
   app.use('/api', getRouter())
-  app.use(errorHandler)
 
   app.listen(process.env.ENV_PORT, () => {
     console.log(`server is running on ${process.env.ENV_PORT}`)
