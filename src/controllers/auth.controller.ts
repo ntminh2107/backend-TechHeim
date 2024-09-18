@@ -64,7 +64,10 @@ const getUser = async (req: Request, res: Response) => {
   const userID = req.user?.id
 
   if (!userID)
-    throw new HttpError('no user found with this ID', HttpStatusCode.NOT_FOUND)
+    throw new HttpError(
+      'no user found with this ID',
+      HttpStatusCode.NOT_ALLOWED
+    )
 
   const user = await findUserByID(userID)
 
@@ -80,7 +83,7 @@ const addAddress = async (req: Request, res: Response) => {
   if (!userID)
     throw new HttpError(
       'no user found with this ID',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_ALLOWED
     )
   const result = await insertAddress(
     userID,
