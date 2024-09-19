@@ -22,7 +22,7 @@ export const tblRole = pgTable('role', {
 export const tblAddress = pgTable('address', {
   id: serial('id').primaryKey(),
   userID: varchar('user_id', { length: 255 }),
-  name: varchar('fullname', { length: 255 }),
+  fullname: varchar('fullname', { length: 255 }),
   address: varchar('address', { length: 255 }),
   district: varchar('district', { length: 255 }),
   city: varchar('city', { length: 255 }),

@@ -5,7 +5,7 @@ import { eq } from 'drizzle-orm'
 
 export const insertAddress = async (
   userID: string,
-  name: string,
+  fullname: string,
   address: string,
   district: string,
   city: string,
@@ -25,7 +25,7 @@ export const insertAddress = async (
       .insert(tblAddress)
       .values({
         userID,
-        name,
+        fullname,
         address,
         district,
         city,

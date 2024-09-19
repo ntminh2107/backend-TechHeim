@@ -29,7 +29,7 @@ export const tblOrder = pgTable('order', {
   userID: uuid('user_id').references(() => tblUser.id),
   addressID: integer('address_id'),
   status: varchar('status', { length: 255 }).default('pending'),
-  total: decimal('total_price', { precision: 10, scale: 2 }),
+  total: decimal('total_price', { precision: 10, scale: 2 }).default('0.00'),
   hasPaid: decimal('has_paid', { precision: 10, scale: 2 }).default('0.00'),
   created_at: timestamp('created_at').defaultNow().notNull(),
   updated_at: timestamp('updated_at').defaultNow().notNull()
