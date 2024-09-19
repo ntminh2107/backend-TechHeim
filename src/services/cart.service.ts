@@ -88,6 +88,7 @@ export const getCartUser = async (userID: string): Promise<Cart | string> => {
       .where(eq(tblUser.id, userID))
     if (!checkUser) throw new Error('something wrong happens')
 
+    let cart
     const cartRs = await trx
       .select({
         id: tblCart.id,
@@ -99,7 +100,16 @@ export const getCartUser = async (userID: string): Promise<Cart | string> => {
       .where(eq(tblUser.id, userID))
       .limit(1)
       .then((rows) => rows[0])
-
+    if (!cartRs) {
+      const newCart = await trx
+        .insert(tblCart)
+        .values({ userID })
+        .returning()
+        .then((rows) => rows[0])
+      cart = newCart
+    } else {
+      cart = cartRs
+    }
     const cartItemsRs = await trx
       .select({
         id: tblCartItems.id,
@@ -109,16 +119,143 @@ export const getCartUser = async (userID: string): Promise<Cart | string> => {
         price: tblCartItems.price
       })
       .from(tblCartItems)
-      .innerJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
-      .where(eq(tblCartItems.cartID, cartRs.id))
+      .leftJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
+      .where(eq(tblCartItems.cartID, cart.id))
 
     const result: Cart = {
-      id: cartRs.id,
-      userID: cartRs.userID as string,
-      status: cartRs.status as string,
+      id: cart.id,
+      userID: cart.userID as string,
+      status: cart.status as string,
       cartItems: cartItemsRs as CartItems[]
     }
 
     return result
+  })
+}
+
+export const updateQuantity = async (
+  userID: string,
+  productID: number,
+  quantity: number
+): Promise<Cart | string> => {
+  const db = getDbClient()
+  return await db.transaction(async (trx) => {
+    const checkCart = await trx
+      .select({
+        userID: tblUser.id,
+        cartID: tblCart.id,
+        id: tblCartItems.id,
+        quantity: tblCartItems.quantity
+      })
+      .from(tblUser)
+      .leftJoin(tblCart, eq(tblUser.id, tblCart.userID))
+      .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCart.id))
+      .where(and(eq(tblUser.id, userID), eq(tblCartItems.productID, productID)))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    if (!checkCart) {
+      throw new Error('cart not found')
+    }
+    if (quantity <= 0) {
+      await trx
+        .delete(tblCartItems)
+        .where(eq(tblCartItems.id, checkCart.id as number))
+    } else {
+      await trx
+        .update(tblCartItems)
+        .set({ quantity: quantity })
+        .where(eq(tblCartItems.id, checkCart.id as number))
+    }
+    const resultUpdated = await trx
+      .select({
+        id: tblCart.id,
+        userID: tblCart.userID,
+        status: tblCart.status
+      })
+      .from(tblCart)
+      .innerJoin(tblUser, eq(tblUser.id, tblCart.userID))
+      .where(eq(tblUser.id, userID))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    const listItemsUpdated = await trx
+      .select({
+        id: tblCartItems.id,
+        name: tblProducts.name,
+        image: tblProducts.image,
+        quantity: tblCartItems.quantity,
+        price: tblCartItems.price
+      })
+      .from(tblCartItems)
+      .innerJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
+      .where(eq(tblCartItems.cartID, resultUpdated.id))
+    const result: Cart = {
+      id: resultUpdated.id,
+      userID: resultUpdated.userID as string,
+      status: resultUpdated.status as string,
+      cartItems: listItemsUpdated as CartItems[]
+    }
+    return result
+  })
+}
+
+export const deleteItem = async (
+  userID: string,
+  productID: number
+): Promise<string> => {
+  const db = getDbClient()
+  return await db.transaction(async (trx) => {
+    const checkCart = await trx
+      .select({
+        userID: tblUser.id,
+        cartID: tblCart.id,
+        id: tblCartItems.id,
+        quantity: tblCartItems.quantity
+      })
+      .from(tblUser)
+      .leftJoin(tblCart, eq(tblUser.id, tblCart.userID))
+      .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCart.id))
+      .where(and(eq(tblUser.id, userID), eq(tblCartItems.productID, productID)))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    if (!checkCart) {
+      throw new Error('cart item not found')
+    }
+
+    await trx
+      .delete(tblCartItems)
+      .where(
+        and(
+          eq(tblCartItems.productID, productID),
+          eq(tblCartItems.cartID, checkCart.cartID as string)
+        )
+      )
+    return 'delete item cart success'
+  })
+}
+
+export const deleteAll = async (userID: string): Promise<string> => {
+  const db = getDbClient()
+  return await db.transaction(async (trx) => {
+    const checkCart = await trx
+      .select({ cartID: tblCart.id })
+      .from(tblCart)
+      .innerJoin(tblUser, eq(tblUser.id, tblCart.userID))
+      .where(eq(tblCart.userID, userID))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    if (!checkCart) return 'cart not found'
+
+    //delete all items in cart
+    await trx
+      .delete(tblCartItems)
+      .where(eq(tblCartItems.cartID, checkCart.cartID))
+    //delete cart for user
+    await trx.delete(tblCart).where(eq(tblCart.id, checkCart.cartID))
+
+    return 'delete cart success'
   })
 }
