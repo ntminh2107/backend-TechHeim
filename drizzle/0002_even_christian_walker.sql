@@ -1,0 +1,1 @@
+ALTER TABLE "order" ALTER COLUMN "total_price" SET DEFAULT '0.00';
