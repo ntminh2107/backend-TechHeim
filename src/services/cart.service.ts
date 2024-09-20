@@ -122,11 +122,16 @@ export const getCartUser = async (userID: string): Promise<Cart | string> => {
       .leftJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
       .where(eq(tblCartItems.cartID, cart.id))
 
+    const itemsWithPriceAsNumber = cartItemsRs.map((item) => ({
+      ...item,
+      price: Number(item.price)
+    }))
+
     const result: Cart = {
       id: cart.id,
       userID: cart.userID as string,
       status: cart.status as string,
-      cartItems: cartItemsRs as CartItems[]
+      cartItems: itemsWithPriceAsNumber as CartItems[]
     }
 
     return result
@@ -190,11 +195,17 @@ export const updateQuantity = async (
       .from(tblCartItems)
       .innerJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
       .where(eq(tblCartItems.cartID, resultUpdated.id))
+
+    const itemsWithPriceAsNumber = listItemsUpdated.map((item) => ({
+      ...item,
+      price: Number(item.price)
+    }))
+
     const result: Cart = {
       id: resultUpdated.id,
       userID: resultUpdated.userID as string,
       status: resultUpdated.status as string,
-      cartItems: listItemsUpdated as CartItems[]
+      cartItems: itemsWithPriceAsNumber as CartItems[]
     }
     return result
   })

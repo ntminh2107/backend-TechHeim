@@ -98,6 +98,13 @@ export const insertProduct = async (
       })
     )
 
+    const priceWithNumbers = insertedPrice.map((item) => ({
+      ...item,
+      price: Number(item.price),
+
+      salePrice: Number(item.salePrice)
+    }))
+
     const productResult: Product = {
       id: productID,
       name,
@@ -105,7 +112,7 @@ export const insertProduct = async (
       color,
       category,
       brand,
-      price: insertedPrice[0] as PriceTag,
+      price: priceWithNumbers[0] as PriceTag,
       specifications
     }
 
@@ -146,7 +153,14 @@ export const productDetail = async (
       .from(tblProductPriceTag)
       .where(eq(tblProductPriceTag.productID, productID))
       .limit(1)
-      .then((rows) => rows[0])
+      .then((rows) => {
+        const row = rows[0]
+        return {
+          ...row,
+          price: Number(row.price),
+          salePrice: Number(row.salePrice)
+        }
+      })
 
     if (!priceTag)
       throw new Error(
@@ -266,7 +280,11 @@ export const filteredbycategory = async (
         rating: tblProducts.rating,
         category: tblCategories.categoryName,
         brand: tblBrands.brandName,
-        tblProductPriceTag
+        priceTagID: tblProductPriceTag.id,
+        price: tblProductPriceTag.price,
+        discount: tblProductPriceTag.discount,
+        percent: tblProductPriceTag.percent,
+        saleprice: tblProductPriceTag.salePrice
       })
       .from(tblProducts)
       .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
@@ -302,7 +320,14 @@ export const filteredbycategory = async (
       rating: Number(product.rating),
       category: product.category as string,
       brand: product.brand as string,
-      price: product.tblProductPriceTag as PriceTag
+      price: {
+        id: product.priceTagID as number,
+        productID: product.id,
+        price: Number(product.price),
+        discount: product.discount as boolean,
+        percent: product.percent as number,
+        saleprice: Number(product.saleprice)
+      }
     }))
 
     return result

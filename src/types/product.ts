@@ -35,10 +35,10 @@ export type Specification = {
 export type PriceTag = {
   id: number
   productID: number
-  price: string
+  price: number
   discount?: boolean
   percent?: number
-  saleprice?: string
+  saleprice?: number
 }
 
 export type Comment = {
