@@ -12,14 +12,14 @@ export type CartItems = {
   name: string
   image: string
   quantity: number
-  price: string
+  price: number
 }
 
 export type OrderItems = {
   name: string
   image: string
   quantity: number
-  price: string
+  price: number
 }
 
 export type Order = {
@@ -29,6 +29,16 @@ export type Order = {
   status: string
   orderItems: OrderItems[]
   total: number
+  createdAt: Date
+  updatedAt: Date
+}
+
+export type Transaction = {
+  id: string
+  orderID: string
+  type: string
+  deposit: number
+  status: string
   createdAt: Date
   updatedAt: Date
 }

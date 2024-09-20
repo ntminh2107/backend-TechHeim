@@ -5,9 +5,11 @@ import {
   tblOrder,
   tblOrderItems
 } from '@/models/cart.schema'
-import { tblUser } from '@/models/user.schema'
-import { Order } from '@/types/cart'
-import { eq } from 'drizzle-orm'
+import { tblProducts } from '@/models/product.schema'
+import { tblAddress, tblUser } from '@/models/user.schema'
+import { Order, OrderItems } from '@/types/cart'
+import { Address } from '@/types/user'
+import { and, eq } from 'drizzle-orm'
 
 export const insertOrder = async (
   userID: string,
@@ -70,12 +72,67 @@ export const insertOrder = async (
 }
 
 /*TODO: GET order + do transaction w/ noti */
-// export const getOrder = async (userID: string): Promise<Order> => {
-//   const db = getDbClient()
-//   return await db.transaction(async (trx) => {
+export const getOrder = async (
+  userID: string,
+  orderID: string
+): Promise<Order | string> => {
+  const db = getDbClient()
+  return await db.transaction(async (trx) => {
+    const orderRs = await trx
+      .select()
+      .from(tblOrder)
+      .leftJoin(tblUser, eq(tblUser.id, tblOrder.userID))
+      .where(and(eq(tblUser.id, userID), eq(tblOrder.id, orderID)))
+      .limit(1)
+      .then((rows) => rows[0])
 
-//     const
+    if (!orderRs) throw new Error('no order found!!!')
+    const addressRs = await trx
+      .select({
+        id: tblAddress.id,
+        fullname: tblAddress.fullname,
+        address: tblAddress.address,
+        city: tblAddress.city,
+        country: tblAddress.country
+      })
+      .from(tblAddress)
+      .where(eq(tblAddress.id, orderRs.order.addressID as number))
+      .limit(1)
+      .then((rows) => rows[0])
 
-//     return
-//   })
-// }
+    const orderItemsRs = await trx
+      .select({
+        id: tblOrderItems.id,
+        name: tblProducts.name,
+        image: tblProducts.image,
+        quantity: tblOrderItems.quantity,
+        price: tblOrderItems.price
+      })
+      .from(tblOrderItems)
+      .leftJoin(tblProducts, eq(tblProducts.id, tblOrderItems.productID))
+      .where(eq(tblCartItems.cartID, orderRs.order.id as string))
+
+    const orderItemsObj = orderItemsRs.map((item) => ({
+      ...item,
+      price: Number(item.price)
+    }))
+
+    const result: Order = {
+      id: orderRs.order.id,
+      userID: orderRs.order.userID as string,
+      address: addressRs as Address,
+      status: orderRs.order.status as string,
+      orderItems: orderItemsObj as OrderItems[],
+      total: Number(orderRs.order.total),
+      createdAt: orderRs.order.created_at,
+      updatedAt: orderRs.order.updated_at
+    }
+
+    return result
+  })
+}
+
+export const insertTransaction = async (
+  userID: string,
+  type: string
+): Promise<void> => {}
