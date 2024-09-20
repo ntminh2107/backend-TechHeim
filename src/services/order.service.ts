@@ -3,11 +3,12 @@ import {
   tblCart,
   tblCartItems,
   tblOrder,
-  tblOrderItems
+  tblOrderItems,
+  tblTransaction
 } from '@/models/cart.schema'
 import { tblProducts } from '@/models/product.schema'
 import { tblAddress, tblUser } from '@/models/user.schema'
-import { Order, OrderItems } from '@/types/cart'
+import { Order, OrderItems, Transaction } from '@/types/cart'
 import { Address } from '@/types/user'
 import { and, eq } from 'drizzle-orm'
 
@@ -134,5 +135,44 @@ export const getOrder = async (
 
 export const insertTransaction = async (
   userID: string,
-  type: string
-): Promise<void> => {}
+  orderID: string,
+  type: string,
+  deposit: number
+): Promise<Transaction | string> => {
+  const db = getDbClient()
+  return await db.transaction(async (trx) => {
+    const [checkUserAndOrder] = await trx
+      .select({
+        userID: tblUser.id,
+        orderID: tblOrder.id
+      })
+      .from(tblUser)
+      .innerJoin(tblOrder, eq(tblOrder.userID, tblUser.id))
+      .where(and(eq(tblUser.id, userID), eq(tblOrder.id, orderID)))
+      .limit(1)
+    if (!checkUserAndOrder) throw new Error('no user found')
+
+    const insertRs = await trx
+      .insert(tblTransaction)
+      .values({
+        orderID,
+        userID,
+        type,
+        deposit: deposit.toString(),
+        status: 'complete'
+      })
+      .returning()
+
+    const transactionRs: Transaction = {
+      id: insertRs[0].id,
+      orderID: insertRs[0].orderID as string,
+      type: insertRs[0].type as string,
+      deposit: Number(insertRs[0].deposit),
+      status: insertRs[0].status as string,
+      createdAt: insertRs[0].created_at as Date,
+      updatedAt: insertRs[0].updated_at as Date
+    }
+
+    return transactionRs
+  })
+}

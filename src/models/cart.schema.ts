@@ -48,6 +48,7 @@ export const tblOrderItems = pgTable('order_item', {
 export const tblTransaction = pgTable('transaction', {
   id: uuid('id').primaryKey().defaultRandom(),
   orderID: uuid('order_id').references(() => tblOrder.id),
+  userID: uuid('user_id').references(() => tblUser.id),
   type: varchar('type', { length: 255 }),
   deposit: decimal('deposit', { precision: 10, scale: 2 }),
   status: varchar('status', { length: 255 }).default('created'),
