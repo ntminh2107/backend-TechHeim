@@ -18,11 +18,11 @@ const addToCartCtrl = async (req: Request, res: Response) => {
       'something wrong,pls try again',
       HttpStatusCode.NOT_ALLOWED
     )
-  const newCart = await addToCart(productID, userID)
+  const data = await addToCart(productID, userID)
 
   res.status(HttpStatusCode.ACCEPTED).json({
     message: 'add to cart success',
-    newCart
+    data: data
   })
 }
 
@@ -33,8 +33,10 @@ const getCart = async (req: Request, res: Response) => {
       'something wrong,pls try again',
       HttpStatusCode.NOT_ALLOWED
     )
-  const getCart = await getCartUser(userID)
-  res.status(HttpStatusCode.ACCEPTED).json({ message: 'cart detail', getCart })
+  const data = await getCartUser(userID)
+  res
+    .status(HttpStatusCode.ACCEPTED)
+    .json({ message: 'cart detail', data: data })
 }
 
 const updateQuantityItm = async (req: Request, res: Response) => {
@@ -46,10 +48,10 @@ const updateQuantityItm = async (req: Request, res: Response) => {
       HttpStatusCode.NOT_ALLOWED
     )
   }
-  const updatedRs = await updateQuantity(userID, productID, quantity)
+  const data = await updateQuantity(userID, productID, quantity)
   res.status(HttpStatusCode.ACCEPTED).json({
     message: 'product quantity updated success',
-    updatedRs: updatedRs
+    data: data
   })
 }
 
@@ -62,10 +64,10 @@ const deleteCartItem = async (req: Request, res: Response) => {
       HttpStatusCode.NOT_ALLOWED
     )
 
-  const rs = await deleteItem(userID, productID)
+  const data = await deleteItem(userID, productID)
   res
     .status(HttpStatusCode.ACCEPTED)
-    .json({ message: 'items deleted success', result: rs })
+    .json({ message: 'items deleted success', data: data })
 }
 
 const deleteCart = async (req: Request, res: Response) => {
@@ -76,10 +78,10 @@ const deleteCart = async (req: Request, res: Response) => {
       HttpStatusCode.NOT_ALLOWED
     )
 
-  const rs = await deleteAll(userID)
+  const data = await deleteAll(userID)
   res
     .status(HttpStatusCode.ACCEPTED)
-    .json({ message: 'cart delete success', result: rs })
+    .json({ message: 'cart delete success', datas: data })
 }
 
 export { addToCartCtrl, getCart, updateQuantityItm, deleteCartItem, deleteCart }

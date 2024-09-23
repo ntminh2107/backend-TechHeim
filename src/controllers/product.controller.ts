@@ -25,11 +25,11 @@ const addProduct = async (req: Request, res: Response) => {
   if (!name || !price || !category || !brand) {
     throw new HttpError(
       'This field must not be empty',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_FOUND
     )
   }
 
-  const product = await insertProduct(
+  const data = await insertProduct(
     name,
     image,
     price,
@@ -43,7 +43,7 @@ const addProduct = async (req: Request, res: Response) => {
 
   res.status(HttpStatusCode.CREATED).json({
     message: 'Product information add success!!!',
-    product: product
+    data: data
   })
 }
 
@@ -52,13 +52,13 @@ const getProductDetail = async (req: Request, res: Response) => {
   if (!productID)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_FOUND
     )
 
-  const product = await productDetail(Number(productID))
+  const data = await productDetail(Number(productID))
   res.status(HttpStatusCode.ACCEPTED).json({
     message: `product with ID: ${productID} found`,
-    product: product
+    data: data
   })
 }
 
@@ -67,13 +67,13 @@ const listFilteredByBrand = async (req: Request, res: Response) => {
   if (!brand)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_FOUND
     )
 
-  const product = await filteredbyBrand(brand)
+  const data = await filteredbyBrand(brand)
   res.status(HttpStatusCode.ACCEPTED).json({
     message: `list of product from brand : ${brand}`,
-    product: product
+    data: data
   })
 }
 
@@ -82,13 +82,13 @@ const listFilteredByCategory = async (req: Request, res: Response) => {
   if (!category)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_FOUND
     )
 
-  const product = await filteredbyBrand(category)
+  const data = await filteredbyBrand(category)
   res.status(HttpStatusCode.ACCEPTED).json({
     message: `list of product from category : ${category}`,
-    product: product
+    data: data
   })
 }
 
@@ -100,14 +100,14 @@ const filteredProduct = async (req: Request, res: Response) => {
   if (!category || !queryParams)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_FOUND
     )
 
-  const productList = await filteredbycategory(category, queryParams)
+  const data = await filteredbycategory(category, queryParams)
 
   res.status(HttpStatusCode.ACCEPTED).json({
     message: 'product filter list :',
-    products: productList
+    data: data
   })
 }
 
@@ -117,13 +117,13 @@ const specFilterCtrl = async (req: Request, res: Response) => {
   if (!category)
     throw new HttpError(
       'something wents wrong!!! pls try again',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_FOUND
     )
 
-  const filterOptions = await filteredFieldOptions(category)
+  const data = await filteredFieldOptions(category)
   res.status(HttpStatusCode.ACCEPTED).json({
     message: 'Options for filtering by spec:',
-    filterOptions: filterOptions
+    data: data
   })
 }
 

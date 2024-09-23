@@ -1,7 +1,7 @@
 import { integer, serial } from 'drizzle-orm/pg-core'
 import { timestamp, varchar, text, uuid, pgTable } from 'drizzle-orm/pg-core'
 
-export const tblUser = pgTable('user', {
+export const tblUser = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
   fullName: varchar('fullname', { length: 55 }).notNull(),
   email: varchar('email', { length: 255 }).notNull(),
@@ -14,12 +14,12 @@ export const tblUser = pgTable('user', {
   updated_at: timestamp('updated_at').defaultNow().notNull()
 })
 
-export const tblRole = pgTable('role', {
+export const tblRole = pgTable('roles', {
   id: serial('id').primaryKey(),
   role: varchar('role', { length: 255 })
 })
 
-export const tblAddress = pgTable('address', {
+export const tblAddress = pgTable('addresses', {
   id: serial('id').primaryKey(),
   userID: varchar('user_id', { length: 255 }),
   fullname: varchar('fullname', { length: 255 }),

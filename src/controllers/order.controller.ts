@@ -15,10 +15,10 @@ const addAnOrder = async (req: Request, res: Response) => {
   if (!userID || !addressID)
     throw new HttpError('something went wrong!!', HttpStatusCode.NOT_ALLOWED)
 
-  const rs = insertOrder(userID, addressID)
+  const data = insertOrder(userID, addressID)
   return res.status(HttpStatusCode.CREATED).json({
     message: 'created success!!!',
-    result: rs
+    data: data
   })
 }
 
@@ -29,10 +29,10 @@ const getAnOrder = async (req: Request, res: Response) => {
   if (!userID || !orderID)
     throw new HttpError('something went wrong!!', HttpStatusCode.NOT_ALLOWED)
 
-  const rs = getOrder(userID, orderID)
+  const data = getOrder(userID, orderID)
   return res.status(HttpStatusCode.ACCEPTED).json({
     message: `get an order with id :${orderID} success!!!`,
-    order: rs
+    data: data
   })
 }
 
@@ -43,10 +43,10 @@ const doTransaction = async (req: Request, res: Response) => {
   if (!userID || !orderID)
     throw new HttpError('something went wrong!!', HttpStatusCode.NOT_ALLOWED)
 
-  const rs = insertTransaction(userID, orderID, type, deposit)
+  const data = insertTransaction(userID, orderID, type, deposit)
   return res.status(HttpStatusCode.ACCEPTED).json({
     message: `transaction complete with order: ${orderID} success!!!`,
-    transaction: rs
+    data: data
   })
 }
 
