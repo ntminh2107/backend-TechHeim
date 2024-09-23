@@ -12,32 +12,32 @@ import { insertAddress } from '@/services/user.service'
 
 const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, phoneNumber } = req.body
-  const user = await register(fullName, email, password, phoneNumber)
+  const data = await register(fullName, email, password, phoneNumber)
 
-  if (typeof user === 'string')
+  if (typeof data === 'string')
     throw new HttpError(
-      'User is not created successfully: ' + user,
+      'User is not created successfully: ' + data,
       HttpStatusCode.BAD_REQUEST
     )
 
   res.status(HttpStatusCode.CREATED).json({
     message: 'User created successfully',
-    user
+    data
   })
 }
 
 const login = async (req: Request, res: Response) => {
-  const user = await findUserByEmail(req.body.email)
-  if (!user) {
+  const data = await findUserByEmail(req.body.email)
+  if (!data) {
     throw new HttpError(
       "user doesn't exist, pls try again!!",
-      HttpStatusCode.INTERNAL_SERVER_ERROR
+      HttpStatusCode.NOT_FOUND
     )
   }
 
   const isCorrectPassword = await bcrypt.compare(
     req.body.password,
-    user.password
+    data.password
   )
 
   if (!isCorrectPassword) {
@@ -47,14 +47,14 @@ const login = async (req: Request, res: Response) => {
     )
   }
 
-  if (!user.id || !user.role) {
+  if (!data.id || !data.role) {
     throw new HttpError(
       'User information is incomplete, unable to login!',
       HttpStatusCode.BAD_REQUEST
     )
   }
 
-  const jwtToken = generateAccessToken(user.id, user.role)
+  const jwtToken = generateAccessToken(data.id, data.role)
   res.status(HttpStatusCode.ACCEPTED).json({
     token: jwtToken
   })
@@ -69,11 +69,11 @@ const getUser = async (req: Request, res: Response) => {
       HttpStatusCode.NOT_ALLOWED
     )
 
-  const user = await findUserByID(userID)
+  const data = await findUserByID(userID)
 
   res.status(HttpStatusCode.OK).json({
     message: 'User information retrieve successfully',
-    user
+    data: data
   })
 }
 
@@ -85,7 +85,7 @@ const addAddress = async (req: Request, res: Response) => {
       'no user found with this ID',
       HttpStatusCode.NOT_ALLOWED
     )
-  const result = await insertAddress(
+  const data = await insertAddress(
     userID,
     name,
     address,
@@ -96,7 +96,7 @@ const addAddress = async (req: Request, res: Response) => {
 
   return res.status(HttpStatusCode.CREATED).json({
     message: 'add address success',
-    result: result
+    result: data
   })
 }
 
