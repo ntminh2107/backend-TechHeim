@@ -10,12 +10,12 @@ import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
 
 const addToCartCtrl = async (req: Request, res: Response) => {
-  const userID = req.user?.id
+  const userID = req.user?.id as string
   const { productID } = req.body
 
-  if (!userID || !productID)
+  if (!productID)
     throw new HttpError(
-      'something wrong,pls try again',
+      'product not found, pls try again!!!',
       HttpStatusCode.NOT_ALLOWED
     )
   const data = await addToCart(productID, userID)
@@ -27,12 +27,8 @@ const addToCartCtrl = async (req: Request, res: Response) => {
 }
 
 const getCart = async (req: Request, res: Response) => {
-  const userID = req.user?.id
-  if (!userID)
-    throw new HttpError(
-      'something wrong,pls try again',
-      HttpStatusCode.NOT_ALLOWED
-    )
+  const userID = req.user?.id as string
+
   const data = await getCartUser(userID)
   res
     .status(HttpStatusCode.ACCEPTED)
@@ -40,12 +36,12 @@ const getCart = async (req: Request, res: Response) => {
 }
 
 const updateQuantityItm = async (req: Request, res: Response) => {
-  const userID = req.user?.id
+  const userID = req.user?.id as string
   const { productID, quantity } = req.body
-  if (!userID || !productID || !quantity) {
+  if (!productID || !quantity) {
     throw new HttpError(
-      'something wrong,pls try again',
-      HttpStatusCode.NOT_ALLOWED
+      'product or quantity is not valid!!!',
+      HttpStatusCode.NOT_FOUND
     )
   }
   const data = await updateQuantity(userID, productID, quantity)
@@ -56,11 +52,11 @@ const updateQuantityItm = async (req: Request, res: Response) => {
 }
 
 const deleteCartItem = async (req: Request, res: Response) => {
-  const userID = req.user?.id
+  const userID = req.user?.id as string
   const { productID } = req.body
-  if (!userID || !productID)
+  if (!productID)
     throw new HttpError(
-      'something wrong,pls try again!!!',
+      'something wrong with this item, pls try again',
       HttpStatusCode.NOT_ALLOWED
     )
 
@@ -71,12 +67,7 @@ const deleteCartItem = async (req: Request, res: Response) => {
 }
 
 const deleteCart = async (req: Request, res: Response) => {
-  const userID = req.user?.id
-  if (!userID)
-    throw new HttpError(
-      'something wrong,pls try again!!!',
-      HttpStatusCode.NOT_ALLOWED
-    )
+  const userID = req.user?.id as string
 
   const data = await deleteAll(userID)
   res

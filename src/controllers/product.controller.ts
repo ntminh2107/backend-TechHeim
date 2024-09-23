@@ -18,7 +18,7 @@ const addProduct = async (req: Request, res: Response) => {
     category,
     brand,
     specifications,
-    discount,
+
     percent
   } = req.body
 
@@ -37,7 +37,7 @@ const addProduct = async (req: Request, res: Response) => {
     category,
     brand,
     specifications,
-    discount,
+
     percent
   )
 

@@ -1,7 +1,6 @@
 import {
   varchar,
   decimal,
-  boolean,
   integer,
   serial,
   pgTable,
@@ -51,7 +50,5 @@ export const tblProductPriceTag = pgTable('productPriceTags', {
   id: serial('id').primaryKey().unique(),
   productID: serial('product_id').references(() => tblProducts.id),
   price: decimal('price', { precision: 10, scale: 2 }),
-  discount: boolean('discount').default(false),
-  percent: integer('percent'),
-  salePrice: decimal('sale_price', { precision: 10, scale: 2 })
+  percent: integer('percent')
 })

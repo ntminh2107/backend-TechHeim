@@ -8,12 +8,12 @@ import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
 
 const addAnOrder = async (req: Request, res: Response) => {
-  const userID = req.user?.id
+  const userID = req.user?.id as string
 
   const { addressID } = req.body
 
-  if (!userID || !addressID)
-    throw new HttpError('something went wrong!!', HttpStatusCode.NOT_ALLOWED)
+  if (!addressID)
+    throw new HttpError('address not found', HttpStatusCode.NOT_FOUND)
 
   const data = insertOrder(userID, addressID)
   return res.status(HttpStatusCode.CREATED).json({
@@ -23,11 +23,11 @@ const addAnOrder = async (req: Request, res: Response) => {
 }
 
 const getAnOrder = async (req: Request, res: Response) => {
-  const userID = req.user?.id
+  const userID = req.user?.id as string
   const { orderID } = req.body
 
-  if (!userID || !orderID)
-    throw new HttpError('something went wrong!!', HttpStatusCode.NOT_ALLOWED)
+  if (!orderID)
+    throw new HttpError('order not found!!', HttpStatusCode.NOT_FOUND)
 
   const data = getOrder(userID, orderID)
   return res.status(HttpStatusCode.ACCEPTED).json({
@@ -37,11 +37,10 @@ const getAnOrder = async (req: Request, res: Response) => {
 }
 
 const doTransaction = async (req: Request, res: Response) => {
-  const userID = req.user?.id
+  const userID = req.user?.id as string
   const { orderID, type, deposit } = req.body
 
-  if (!userID || !orderID)
-    throw new HttpError('something went wrong!!', HttpStatusCode.NOT_ALLOWED)
+  if (!orderID) throw new HttpError('order not found', HttpStatusCode.NOT_FOUND)
 
   const data = insertTransaction(userID, orderID, type, deposit)
   return res.status(HttpStatusCode.ACCEPTED).json({
