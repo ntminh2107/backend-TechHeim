@@ -47,21 +47,21 @@ export const insertOrder = async (
         'dont have any items in your cart!!! pls choose an item before going to order'
       )
     let totalOrder = 0
-    Promise.all(
-      cartItemRs.map(async (item) => {
-        const total: number = Number(item.price) * (item.quantity as number)
-        await trx
-          .insert(tblOrderItems)
-          .values({
-            orderID,
-            productID: item.productID as number,
-            quantity: item.quantity as number,
-            price: total.toString()
-          })
-          .returning()
-        totalOrder += total
-      })
-    )
+
+    const orderItems = cartItemRs.map((item) => {
+      const total: number = Number(item.price) * (item.quantity as number)
+
+      totalOrder += total
+
+      return {
+        orderID,
+        productID: item.productID as number,
+        quantity: item.quantity as number,
+        price: total.toString()
+      }
+    })
+
+    await trx.insert(tblOrderItems).values(orderItems).returning()
 
     await trx
       .update(tblOrder)
@@ -97,7 +97,7 @@ export const getOrder = async (
         country: tblAddress.country
       })
       .from(tblAddress)
-      .where(eq(tblAddress.id, orderRs.order.addressID as number))
+      .where(eq(tblAddress.id, orderRs.orders.addressID as number))
       .limit(1)
       .then((rows) => rows[0])
 
@@ -111,7 +111,7 @@ export const getOrder = async (
       })
       .from(tblOrderItems)
       .leftJoin(tblProducts, eq(tblProducts.id, tblOrderItems.productID))
-      .where(eq(tblCartItems.cartID, orderRs.order.id as string))
+      .where(eq(tblCartItems.cartID, orderRs.orders.id as string))
 
     const orderItemsObj = orderItemsRs.map((item) => ({
       ...item,
@@ -119,14 +119,14 @@ export const getOrder = async (
     }))
 
     const result: Order = {
-      id: orderRs.order.id,
-      userID: orderRs.order.userID as string,
+      id: orderRs.orders.id,
+      userID: orderRs.orders.userID as string,
       address: addressRs as Address,
-      status: orderRs.order.status as string,
+      status: orderRs.orders.status as string,
       orderItems: orderItemsObj as OrderItems[],
-      total: Number(orderRs.order.total),
-      createdAt: orderRs.order.created_at,
-      updatedAt: orderRs.order.updated_at
+      total: Number(orderRs.orders.total),
+      createdAt: orderRs.orders.created_at,
+      updatedAt: orderRs.orders.updated_at
     }
 
     return result

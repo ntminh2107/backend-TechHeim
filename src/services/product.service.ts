@@ -17,7 +17,6 @@ export const insertProduct = async (
   category: string,
   brand: string,
   specifications: { key: string; value: string }[],
-  discount?: boolean,
   percent?: number
 ): Promise<Product | string> => {
   const db = getDbClient()
@@ -68,41 +67,33 @@ export const insertProduct = async (
 
     const productID = insertedProduct[0].id
 
-    const salePrice = (Number(price) * (1 - (percent as number) / 100))
-      .toFixed(2)
-      .toString()
-
     //insert product price...
     const insertedPrice = await trx
       .insert(tblProductPriceTag)
       .values({
         productID,
         price,
-        discount,
-        percent,
-        salePrice
+        percent
       })
       .returning()
 
     //insert product specification
-    Promise.all(
-      specifications.map(async (spec) => {
-        await trx
-          .insert(tblSpecification)
-          .values({
-            productID,
-            key: spec.key,
-            value: spec.value
-          })
-          .returning()
-      })
-    )
+    await trx
+      .insert(tblSpecification)
+      .values(
+        specifications.map((spec) => ({
+          productID,
+          key: spec.key,
+          value: spec.value
+        }))
+      )
+      .returning()
+
+    await trx.insert(tblSpecification).values([])
 
     const priceWithNumbers = insertedPrice.map((item) => ({
       ...item,
-      price: Number(item.price),
-
-      salePrice: Number(item.salePrice)
+      price: Number(item.price)
     }))
 
     const productResult: Product = {
@@ -157,8 +148,7 @@ export const productDetail = async (
         const row = rows[0]
         return {
           ...row,
-          price: Number(row.price),
-          salePrice: Number(row.salePrice)
+          price: Number(row.price)
         }
       })
 
@@ -247,15 +237,12 @@ export const filteredbycategory = async (
     delete specFilters.page
     delete specFilters.limit
     const baseCondition = [
-      // eq(tblCategories.categoryName, category),
       sql`LOWER(${tblCategories.categoryName}) = ${category}`
     ]
 
     if (Object.keys(specFilters).length > 0) {
       const specConditions = Object.entries(specFilters).map(([key, value]) => {
         return and(
-          // eq(tblSpecification.key, key),
-          // eq(tblSpecification.value, value)
           sql`LOWER(${tblSpecification.key}) = ${key}`,
           sql`LOWER(${tblSpecification.value}) = ${value}`
         )
@@ -282,9 +269,8 @@ export const filteredbycategory = async (
         brand: tblBrands.brandName,
         priceTagID: tblProductPriceTag.id,
         price: tblProductPriceTag.price,
-        discount: tblProductPriceTag.discount,
-        percent: tblProductPriceTag.percent,
-        saleprice: tblProductPriceTag.salePrice
+
+        percent: tblProductPriceTag.percent
       })
       .from(tblProducts)
       .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
@@ -324,9 +310,8 @@ export const filteredbycategory = async (
         id: product.priceTagID as number,
         productID: product.id,
         price: Number(product.price),
-        discount: product.discount as boolean,
-        percent: product.percent as number,
-        saleprice: Number(product.saleprice)
+
+        percent: product.percent as number
       }
     }))
 

@@ -41,8 +41,7 @@ export const addToCart = async (
     const [priceAndItem] = await trx
       .select({
         price: tblProductPriceTag.price,
-        discount: tblProductPriceTag.discount,
-        salePrice: tblProductPriceTag.salePrice,
+        percent: tblProductPriceTag.percent,
         cartItem: tblCartItems
       })
       .from(tblProductPriceTag)
@@ -60,9 +59,14 @@ export const addToCart = async (
       throw new Error('Product price not found')
     }
 
-    const productPrice = priceAndItem.discount
-      ? priceAndItem.salePrice
-      : priceAndItem.price
+    const salePrice = (
+      Number(priceAndItem.price) *
+      (1 - (priceAndItem.percent as number) / 100)
+    )
+      .toFixed(2)
+      .toString()
+
+    const productPrice = priceAndItem.percent ? salePrice : priceAndItem.price
 
     if (!priceAndItem.cartItem) {
       await trx
