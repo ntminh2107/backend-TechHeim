@@ -100,4 +100,6 @@ const addAddress = async (req: Request, res: Response) => {
   })
 }
 
+// const logout = async (req: Request, res: Response) => {}
+
 export { registerUser, login, getUser, addAddress }
