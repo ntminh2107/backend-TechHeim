@@ -1,0 +1,37 @@
+
+services:
+  app:
+    build: .
+    ports:
+      - "4000:3000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: mydatabase
+
+  postgres:
+    image: postgres:12.20-alpine3.20
+    container_name: my_postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: mydatabase
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -d mydatabase -U admin']
+      interval: 30s
+      timeout: 60s
+      retries: 5
+      start_period: 80s
+    ports:
+      - "5432:5432"  # Fixed port mapping syntax
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
