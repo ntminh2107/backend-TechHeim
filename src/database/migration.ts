@@ -19,7 +19,8 @@ export const migrationDB = async () => {
     console.log('connect to db success')
     const db = drizzle(client)
 
-    migrate(db, { migrationsFolder: 'drizzle' })
+    await migrate(db, { migrationsFolder: 'drizzle' })
+    await client.end()
   } catch (err) {
     console.error('cannot connect to db')
   }
