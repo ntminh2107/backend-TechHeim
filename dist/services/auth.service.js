@@ -28,8 +28,8 @@ const register = async (fullName, email, password, phoneNumber) => {
             fullName,
             password: hashedPassword,
             phoneNumber,
-            created_at: currentTime,
-            updated_at: currentTime
+            createdAt: currentTime,
+            updatedAt: currentTime
         })
             .returning();
         if (result && result.length > 0) {
@@ -70,8 +70,8 @@ const findUserByID = async (userID) => {
         email: user_schema_1.tblUser.email,
         phoneNumber: user_schema_1.tblUser.phoneNumber,
         role: user_schema_1.tblRole.role,
-        createdAt: user_schema_1.tblUser.created_at,
-        updatedAt: user_schema_1.tblUser.updated_at
+        createdAt: user_schema_1.tblUser.createdAt,
+        updatedAt: user_schema_1.tblUser.updatedAt
     })
         .from(user_schema_1.tblUser)
         .innerJoin(user_schema_1.tblRole, (0, drizzle_orm_1.eq)(user_schema_1.tblUser.roleID, user_schema_1.tblRole.id))

@@ -1,5 +1,5 @@
 import { getDbClient } from '@/database/connection'
-import { tblRole, tblUser } from '@/models/user.schema'
+import { tblRoles, tblUsers } from '@/models/user.schema'
 import { User } from '@/types/user'
 import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
@@ -15,8 +15,8 @@ export const register = async (
 
   const existedUser = await db
     .select()
-    .from(tblUser)
-    .where(eq(tblUser.email, email))
+    .from(tblUsers)
+    .where(eq(tblUsers.email, email))
     .limit(1)
 
   if (existedUser && existedUser.length > 0) {
@@ -29,14 +29,14 @@ export const register = async (
 
   return await db.transaction(async (trx) => {
     const result = await trx
-      .insert(tblUser)
+      .insert(tblUsers)
       .values({
         email,
         fullName,
         password: hashedPassword,
         phoneNumber,
-        created_at: currentTime,
-        updated_at: currentTime
+        createdAt: currentTime,
+        updatedAt: currentTime
       })
       .returning()
 
@@ -54,14 +54,14 @@ export const findUserByEmail = async (email: string): Promise<User | false> => {
 
   const user = await db
     .select({
-      id: tblUser.id,
-      email: tblUser.email,
-      password: tblUser.password,
-      role: tblRole.role
+      id: tblUsers.id,
+      email: tblUsers.email,
+      password: tblUsers.password,
+      role: tblRoles.role
     })
-    .from(tblUser)
-    .innerJoin(tblRole, eq(tblUser.roleID, tblRole.id))
-    .where(eq(tblUser.email, email))
+    .from(tblUsers)
+    .innerJoin(tblRoles, eq(tblUsers.roleID, tblRoles.id))
+    .where(eq(tblUsers.email, email))
     .limit(1)
     .then((rows) => rows[0])
 
@@ -74,17 +74,17 @@ export const findUserByID = async (userID: string): Promise<User | string> => {
 
   const user = await db
     .select({
-      id: tblUser.id,
-      fullName: tblUser.fullName,
-      email: tblUser.email,
-      phoneNumber: tblUser.phoneNumber,
-      role: tblRole.role,
-      createdAt: tblUser.created_at,
-      updatedAt: tblUser.updated_at
+      id: tblUsers.id,
+      fullName: tblUsers.fullName,
+      email: tblUsers.email,
+      phoneNumber: tblUsers.phoneNumber,
+      role: tblRoles.role,
+      createdAt: tblUsers.createdAt,
+      updatedAt: tblUsers.updatedAt
     })
-    .from(tblUser)
-    .innerJoin(tblRole, eq(tblUser.roleID, tblRole.id))
-    .where(eq(tblUser.id, userID))
+    .from(tblUsers)
+    .innerJoin(tblRoles, eq(tblUsers.roleID, tblRoles.id))
+    .where(eq(tblUsers.id, userID))
     .limit(1)
     .then((rows) => rows[0])
 

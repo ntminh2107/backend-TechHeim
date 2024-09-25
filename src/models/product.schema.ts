@@ -6,7 +6,7 @@ import {
   pgTable,
   timestamp
 } from 'drizzle-orm/pg-core'
-import { tblUser } from './user.schema'
+import { tblUsers } from './user.schema'
 import { uuid } from 'drizzle-orm/pg-core'
 
 export const tblCategories = pgTable('categories', {
@@ -24,31 +24,31 @@ export const tblProducts = pgTable('products', {
   image: varchar('image', { length: 255 }),
   color: varchar('color', { length: 255 }).notNull(),
   rating: decimal('rating', { precision: 10, scale: 2 }).default('0.00'),
-  categoryID: serial('category_id')
+  categoryID: serial('categoryID')
     .references(() => tblCategories.id)
     .notNull(),
-  brandID: serial('brand_id').references(() => tblBrands.id)
+  brandID: serial('brandID').references(() => tblBrands.id)
 })
 
-export const tblSpecification = pgTable('specifications', {
+export const tblSpecifications = pgTable('specifications', {
   id: serial('id').primaryKey().unique(),
-  productID: serial('product_id').references(() => tblProducts.id),
+  productID: serial('productID').references(() => tblProducts.id),
   key: varchar('key', { length: 255 }),
   value: varchar('value', { length: 255 })
 })
 
-export const tblCommentProduct = pgTable('comments', {
+export const tblCommentProducts = pgTable('comments', {
   id: serial('id').primaryKey(),
-  productID: serial('product_id').references(() => tblProducts.id),
-  userID: uuid('user_id').references(() => tblUser.id),
+  productID: serial('productID').references(() => tblProducts.id),
+  userID: uuid('userID').references(() => tblUsers.id),
   content: varchar('content', { length: 255 }),
   date: timestamp('date').defaultNow(),
   rating: decimal('rating', { precision: 10, scale: 2 })
 })
 
-export const tblProductPriceTag = pgTable('productPriceTags', {
+export const tblProductPriceTags = pgTable('productPriceTags', {
   id: serial('id').primaryKey().unique(),
-  productID: serial('product_id').references(() => tblProducts.id),
+  productID: serial('productID').references(() => tblProducts.id),
   price: decimal('price', { precision: 10, scale: 2 }),
   percent: integer('percent')
 })

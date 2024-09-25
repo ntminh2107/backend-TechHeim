@@ -4,54 +4,21 @@ import {
   uuid,
   pgTable,
   serial,
-  integer,
-  timestamp
+  integer
 } from 'drizzle-orm/pg-core'
-import { tblUser } from './user.schema'
+import { tblUsers } from './user.schema'
 import { tblProducts } from './product.schema'
 
-export const tblCart = pgTable('carts', {
+export const tblCarts = pgTable('carts', {
   id: uuid('id').primaryKey().defaultRandom(),
-  userID: uuid('user_id').references(() => tblUser.id),
+  userID: uuid('userID').references(() => tblUsers.id),
   status: varchar('status', { length: 255 }).default('cart')
 })
 
 export const tblCartItems = pgTable('cartItems', {
   id: serial('id').primaryKey(),
-  cartID: uuid('cart_id').references(() => tblCart.id),
-  productID: integer('product_id').references(() => tblProducts.id),
+  cartID: uuid('cartID').references(() => tblCarts.id),
+  productID: integer('productID').references(() => tblProducts.id),
   quantity: integer('quantity').default(1),
   price: decimal('price', { precision: 10, scale: 2 })
-})
-
-export const tblOrder = pgTable('orders', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userID: uuid('user_id').references(() => tblUser.id),
-  addressID: integer('address_id'),
-  status: varchar('status', { length: 255 }).default('pending'),
-  total: decimal('total_price', { precision: 10, scale: 2 }).default('0.00'),
-  hasPaid: decimal('has_paid', { precision: 10, scale: 2 }).default('0.00'),
-  created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
-})
-
-export const tblOrderItems = pgTable('orderItems', {
-  id: serial('id').primaryKey(),
-  orderID: uuid('order_id').references(() => tblOrder.id),
-  productID: integer('product_id')
-    .references(() => tblProducts.id)
-    .notNull(),
-  quantity: integer('quantity').notNull(),
-  price: decimal('price', { precision: 10, scale: 2 })
-})
-
-export const tblTransaction = pgTable('transactions', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  orderID: uuid('order_id').references(() => tblOrder.id),
-  userID: uuid('user_id').references(() => tblUser.id),
-  type: varchar('type', { length: 255 }),
-  deposit: decimal('deposit', { precision: 10, scale: 2 }),
-  status: varchar('status', { length: 255 }).default('created'),
-  created_at: timestamp('created_at').defaultNow(),
-  updated_at: timestamp('updated_at').defaultNow()
 })

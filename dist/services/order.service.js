@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.insertTransaction = exports.getOrder = exports.insertOrder = void 0;
 const connection_1 = require("@/database/connection");
 const cart_schema_1 = require("@/models/cart.schema");
+const order_schema_1 = require("@/models/order.schema");
 const product_schema_1 = require("@/models/product.schema");
 const user_schema_1 = require("@/models/user.schema");
 const drizzle_orm_1 = require("drizzle-orm");
@@ -18,7 +19,7 @@ const insertOrder = async (userID, addressID) => {
         throw new Error('something wrong happen');
     return await db.transaction(async (trx) => {
         const insertOrder = await trx
-            .insert(cart_schema_1.tblOrder)
+            .insert(order_schema_1.tblOrders)
             .values({ userID: userID, addressID })
             .returning();
         if (!insertOrder)
@@ -43,7 +44,7 @@ const insertOrder = async (userID, addressID) => {
         });
         await trx.insert(cart_schema_1.tblOrderItems).values(orderItems).returning();
         await trx
-            .update(cart_schema_1.tblOrder)
+            .update(order_schema_1.tblOrders)
             .set({ total: totalOrder.toString() })
             .where((0, drizzle_orm_1.eq)(cart_schema_1.tblOrder.id, orderID));
         return 'create new order success';
@@ -55,7 +56,7 @@ const getOrder = async (userID, orderID) => {
     const db = (0, connection_1.getDbClient)();
     const orderRs = await db
         .select()
-        .from(cart_schema_1.tblOrder)
+        .from(order_schema_1.tblOrders)
         .leftJoin(user_schema_1.tblUser, (0, drizzle_orm_1.eq)(user_schema_1.tblUser.id, cart_schema_1.tblOrder.userID))
         .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(user_schema_1.tblUser.id, userID), (0, drizzle_orm_1.eq)(cart_schema_1.tblOrder.id, orderID)))
         .limit(1)
@@ -96,8 +97,8 @@ const getOrder = async (userID, orderID) => {
         status: orderRs.orders.status,
         orderItems: orderItemsObj,
         total: Number(orderRs.orders.total),
-        createdAt: orderRs.orders.created_at,
-        updatedAt: orderRs.orders.updated_at
+        createdAt: orderRs.orders.createdAt,
+        updatedAt: orderRs.orders.updatedAt
     };
     return result;
 };
@@ -132,8 +133,8 @@ const insertTransaction = async (userID, orderID, type, deposit) => {
             type: insertRs[0].type,
             deposit: Number(insertRs[0].deposit),
             status: insertRs[0].status,
-            createdAt: insertRs[0].created_at,
-            updatedAt: insertRs[0].updated_at
+            createdAt: insertRs[0].createdAt,
+            updatedAt: insertRs[0].updatedAt
         };
         return transactionRs;
     });

@@ -2,9 +2,9 @@ import { getDbClient } from '@/database/connection'
 import {
   tblBrands,
   tblCategories,
-  tblProductPriceTag,
+  tblProductPriceTags,
   tblProducts,
-  tblSpecification
+  tblSpecifications
 } from '@/models/product.schema'
 import { PriceTag, Product } from '@/types/product'
 import { SQL, and, between, eq, gte, lte, sql } from 'drizzle-orm'
@@ -69,7 +69,7 @@ export const insertProduct = async (
 
     //insert product price...
     const insertedPrice = await trx
-      .insert(tblProductPriceTag)
+      .insert(tblProductPriceTags)
       .values({
         productID,
         price,
@@ -79,7 +79,7 @@ export const insertProduct = async (
 
     //insert product specification
     await trx
-      .insert(tblSpecification)
+      .insert(tblSpecifications)
       .values(
         specifications.map((spec) => ({
           productID,
@@ -89,7 +89,7 @@ export const insertProduct = async (
       )
       .returning()
 
-    await trx.insert(tblSpecification).values([])
+    await trx.insert(tblSpecifications).values([])
 
     const priceWithNumbers = insertedPrice.map((item) => ({
       ...item,
@@ -140,8 +140,8 @@ export const productDetail = async (
 
   const priceTag = await db
     .select()
-    .from(tblProductPriceTag)
-    .where(eq(tblProductPriceTag.productID, productID))
+    .from(tblProductPriceTags)
+    .where(eq(tblProductPriceTags.productID, productID))
     .limit(1)
     .then((rows) => {
       const row = rows[0]
@@ -155,9 +155,9 @@ export const productDetail = async (
     throw new Error('something wrong when trying to get price tag for product')
 
   const specifications = await db
-    .select({ key: tblSpecification.key, value: tblSpecification.value })
-    .from(tblSpecification)
-    .where(eq(tblSpecification.productID, productID))
+    .select({ key: tblSpecifications.key, value: tblSpecifications.value })
+    .from(tblSpecifications)
+    .where(eq(tblSpecifications.productID, productID))
 
   const productResult: Product = {
     id: productDetail.id,
@@ -234,19 +234,19 @@ export const filteredbycategory = async (
   if (Object.keys(specFilters).length > 0) {
     const specConditions = Object.entries(specFilters).map(([key, value]) => {
       return and(
-        sql`LOWER(${tblSpecification.key}) = ${key}`,
-        sql`LOWER(${tblSpecification.value}) = ${value}`
+        sql`LOWER(${tblSpecifications.key}) = ${key}`,
+        sql`LOWER(${tblSpecifications.value}) = ${value}`
       )
     })
     baseCondition.push(and(...specConditions) as SQL<unknown>)
   }
 
   if (min !== undefined && max !== undefined) {
-    baseCondition.push(between(tblProductPriceTag.price, min, max))
+    baseCondition.push(between(tblProductPriceTags.price, min, max))
   } else if (min !== undefined) {
-    baseCondition.push(gte(tblProductPriceTag.price, min))
+    baseCondition.push(gte(tblProductPriceTags.price, min))
   } else if (max !== undefined) {
-    baseCondition.push(lte(tblProductPriceTag.price, max))
+    baseCondition.push(lte(tblProductPriceTags.price, max))
   }
 
   const queryResult = db
@@ -258,19 +258,22 @@ export const filteredbycategory = async (
       rating: tblProducts.rating,
       category: tblCategories.categoryName,
       brand: tblBrands.brandName,
-      priceTagID: tblProductPriceTag.id,
-      price: tblProductPriceTag.price,
+      priceTagID: tblProductPriceTags.id,
+      price: tblProductPriceTags.price,
 
-      percent: tblProductPriceTag.percent
+      percent: tblProductPriceTags.percent
     })
     .from(tblProducts)
     .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
     .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
     .leftJoin(
-      tblProductPriceTag,
-      eq(tblProductPriceTag.productID, tblProducts.id)
+      tblProductPriceTags,
+      eq(tblProductPriceTags.productID, tblProducts.id)
     )
-    .leftJoin(tblSpecification, eq(tblSpecification.productID, tblProducts.id))
+    .leftJoin(
+      tblSpecifications,
+      eq(tblSpecifications.productID, tblProducts.id)
+    )
     .where(and(...baseCondition))
     .groupBy(
       tblProducts.id,
@@ -280,8 +283,8 @@ export const filteredbycategory = async (
       tblProducts.rating,
       tblCategories.categoryName,
       tblBrands.brandName,
-      tblProductPriceTag.price,
-      tblProductPriceTag.id
+      tblProductPriceTags.price,
+      tblProductPriceTags.id
     )
     .limit(limit)
     .offset(offset)
@@ -312,14 +315,14 @@ export const filteredFieldOptions = async (
   const db = getDbClient()
   const queryResult = await db
     .select({
-      key: tblSpecification.key,
-      value: tblSpecification.value
+      key: tblSpecifications.key,
+      value: tblSpecifications.value
     })
-    .from(tblSpecification)
-    .innerJoin(tblProducts, eq(tblProducts.id, tblSpecification.productID))
+    .from(tblSpecifications)
+    .innerJoin(tblProducts, eq(tblProducts.id, tblSpecifications.productID))
     .innerJoin(tblCategories, eq(tblCategories.id, tblProducts.categoryID))
     .where(sql`LOWER(${tblCategories.categoryName}) = ${category}`)
-    .groupBy(tblSpecification.key, tblSpecification.value)
+    .groupBy(tblSpecifications.key, tblSpecifications.value)
 
   const result: { [key: string]: string[] } = {}
 

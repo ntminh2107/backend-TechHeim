@@ -21,7 +21,8 @@ const migrationDB = async () => {
         await client.connect();
         console.log('connect to db success');
         const db = (0, node_postgres_1.drizzle)(client);
-        (0, migrator_1.migrate)(db, { migrationsFolder: 'drizzle' });
+        await (0, migrator_1.migrate)(db, { migrationsFolder: 'drizzle' });
+        await client.end();
     }
     catch (err) {
         console.error('cannot connect to db');
