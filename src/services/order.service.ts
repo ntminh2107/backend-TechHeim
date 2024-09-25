@@ -1,14 +1,13 @@
 import { getDbClient } from '@/database/connection'
+import { tblCarts, tblCartItems } from '@/models/cart.schema'
 import {
-  tblCart,
-  tblCartItems,
-  tblOrder,
   tblOrderItems,
-  tblTransaction
-} from '@/models/cart.schema'
+  tblOrders,
+  tblTransactions
+} from '@/models/order.schema'
 import { tblProducts } from '@/models/product.schema'
-import { tblAddress, tblUser } from '@/models/user.schema'
-import { Order, OrderItems, Transaction } from '@/types/cart'
+import { tblAddresses, tblUsers } from '@/models/user.schema'
+import { Order, OrderItems, Transaction } from '@/types/order'
 import { Address } from '@/types/user'
 import { and, eq } from 'drizzle-orm'
 
@@ -20,15 +19,15 @@ export const insertOrder = async (
 
   const checkCart = await db
     .select()
-    .from(tblCart)
-    .where(eq(tblCart.userID, userID))
+    .from(tblCarts)
+    .where(eq(tblCarts.userID, userID))
     .limit(1)
     .then((rows) => rows[0])
   if (!checkCart) throw new Error('something wrong happen')
 
   return await db.transaction(async (trx) => {
     const insertOrder = await trx
-      .insert(tblOrder)
+      .insert(tblOrders)
       .values({ userID: userID, addressID })
       .returning()
 
@@ -63,9 +62,9 @@ export const insertOrder = async (
     await trx.insert(tblOrderItems).values(orderItems).returning()
 
     await trx
-      .update(tblOrder)
+      .update(tblOrders)
       .set({ total: totalOrder.toString() })
-      .where(eq(tblOrder.id, orderID))
+      .where(eq(tblOrders.id, orderID))
 
     return 'create new order success'
   })
@@ -79,23 +78,23 @@ export const getOrder = async (
   const db = getDbClient()
   const orderRs = await db
     .select()
-    .from(tblOrder)
-    .leftJoin(tblUser, eq(tblUser.id, tblOrder.userID))
-    .where(and(eq(tblUser.id, userID), eq(tblOrder.id, orderID)))
+    .from(tblOrders)
+    .leftJoin(tblUsers, eq(tblUsers.id, tblOrders.userID))
+    .where(and(eq(tblUsers.id, userID), eq(tblOrders.id, orderID)))
     .limit(1)
     .then((rows) => rows[0])
 
   if (!orderRs) throw new Error('no order found!!!')
   const addressRs = await db
     .select({
-      id: tblAddress.id,
-      fullname: tblAddress.fullname,
-      address: tblAddress.address,
-      city: tblAddress.city,
-      country: tblAddress.country
+      id: tblAddresses.id,
+      fullname: tblAddresses.fullname,
+      address: tblAddresses.address,
+      city: tblAddresses.city,
+      country: tblAddresses.country
     })
-    .from(tblAddress)
-    .where(eq(tblAddress.id, orderRs.orders.addressID as number))
+    .from(tblAddresses)
+    .where(eq(tblAddresses.id, orderRs.orders.addressID as number))
     .limit(1)
     .then((rows) => rows[0])
 
@@ -123,8 +122,8 @@ export const getOrder = async (
     status: orderRs.orders.status as string,
     orderItems: orderItemsObj as OrderItems[],
     total: Number(orderRs.orders.total),
-    createdAt: orderRs.orders.created_at,
-    updatedAt: orderRs.orders.updated_at
+    createdAt: orderRs.orders.createdAt,
+    updatedAt: orderRs.orders.updatedAt
   }
 
   return result
@@ -140,18 +139,18 @@ export const insertTransaction = async (
 
   const [checkUserAndOrder] = await db
     .select({
-      userID: tblUser.id,
-      orderID: tblOrder.id
+      userID: tblUsers.id,
+      orderID: tblOrders.id
     })
-    .from(tblUser)
-    .innerJoin(tblOrder, eq(tblOrder.userID, tblUser.id))
-    .where(and(eq(tblUser.id, userID), eq(tblOrder.id, orderID)))
+    .from(tblUsers)
+    .innerJoin(tblOrders, eq(tblOrders.userID, tblUsers.id))
+    .where(and(eq(tblUsers.id, userID), eq(tblOrders.id, orderID)))
     .limit(1)
   if (!checkUserAndOrder) throw new Error('no user found')
 
   return await db.transaction(async (trx) => {
     const insertRs = await trx
-      .insert(tblTransaction)
+      .insert(tblTransactions)
       .values({
         orderID,
         userID,
@@ -167,8 +166,8 @@ export const insertTransaction = async (
       type: insertRs[0].type as string,
       deposit: Number(insertRs[0].deposit),
       status: insertRs[0].status as string,
-      createdAt: insertRs[0].created_at as Date,
-      updatedAt: insertRs[0].updated_at as Date
+      createdAt: insertRs[0].createdAt as Date,
+      updatedAt: insertRs[0].updatedAt as Date
     }
 
     return transactionRs

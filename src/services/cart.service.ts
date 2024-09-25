@@ -1,7 +1,7 @@
 import { getDbClient } from '@/database/connection'
-import { tblCart, tblCartItems } from '@/models/cart.schema'
-import { tblProductPriceTag, tblProducts } from '@/models/product.schema'
-import { tblUser } from '@/models/user.schema'
+import { tblCarts, tblCartItems } from '@/models/cart.schema'
+import { tblProductPriceTags, tblProducts } from '@/models/product.schema'
+import { tblUsers } from '@/models/user.schema'
 import { Cart, CartItems } from '@/types/cart'
 import { and, eq } from 'drizzle-orm'
 
@@ -13,8 +13,8 @@ export const addToCart = async (
   const db = getDbClient()
   const checkCart = await db
     .select()
-    .from(tblCart)
-    .where(eq(tblCart.userID, userID))
+    .from(tblCarts)
+    .where(eq(tblCarts.userID, userID))
     .limit(1)
     .then((rows) => rows[0])
 
@@ -25,9 +25,9 @@ export const addToCart = async (
     let cartID: string
     if (!checkCart) {
       const [newCart] = await trx
-        .insert(tblCart)
+        .insert(tblCarts)
         .values({ userID })
-        .returning({ id: tblCart.id })
+        .returning({ id: tblCarts.id })
       cartID = newCart.id
     } else {
       cartID = checkCart.id
@@ -35,19 +35,19 @@ export const addToCart = async (
 
     const [priceAndItem] = await trx
       .select({
-        price: tblProductPriceTag.price,
-        percent: tblProductPriceTag.percent,
+        price: tblProductPriceTags.price,
+        percent: tblProductPriceTags.percent,
         cartItem: tblCartItems
       })
-      .from(tblProductPriceTag)
+      .from(tblProductPriceTags)
       .leftJoin(
         tblCartItems,
         and(
-          eq(tblCartItems.productID, tblProductPriceTag.productID),
+          eq(tblCartItems.productID, tblProductPriceTags.productID),
           eq(tblCartItems.cartID, cartID)
         )
       )
-      .where(eq(tblProductPriceTag.productID, productID))
+      .where(eq(tblProductPriceTags.productID, productID))
       .limit(1)
 
     if (!priceAndItem) {
@@ -83,18 +83,18 @@ export const getCartUser = async (userID: string): Promise<Cart | string> => {
   let cart
   const cartRs = await db
     .select({
-      id: tblCart.id,
-      userID: tblUser.id,
-      status: tblCart.status
+      id: tblCarts.id,
+      userID: tblUsers.id,
+      status: tblCarts.status
     })
-    .from(tblCart)
-    .innerJoin(tblUser, eq(tblUser.id, tblCart.userID))
-    .where(eq(tblUser.id, userID))
+    .from(tblCarts)
+    .innerJoin(tblUsers, eq(tblUsers.id, tblCarts.userID))
+    .where(eq(tblUsers.id, userID))
     .limit(1)
     .then((rows) => rows[0])
   if (!cartRs) {
     const newCart = await db
-      .insert(tblCart)
+      .insert(tblCarts)
       .values({ userID })
       .returning()
       .then((rows) => rows[0])
@@ -137,14 +137,14 @@ export const updateQuantity = async (
   const db = getDbClient()
   const checkCart = await db
     .select({
-      cartID: tblCart.id,
+      cartID: tblCarts.id,
       id: tblCartItems.id,
       quantity: tblCartItems.quantity
     })
-    .from(tblCart)
-    .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCart.id))
+    .from(tblCarts)
+    .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCarts.id))
     .where(
-      and(eq(tblCart.userID, userID), eq(tblCartItems.productID, productID))
+      and(eq(tblCarts.userID, userID), eq(tblCartItems.productID, productID))
     )
     .limit(1)
     .then((rows) => rows[0])
@@ -165,13 +165,13 @@ export const updateQuantity = async (
     }
     const resultUpdated = await trx
       .select({
-        id: tblCart.id,
-        userID: tblCart.userID,
-        status: tblCart.status
+        id: tblCarts.id,
+        userID: tblCarts.userID,
+        status: tblCarts.status
       })
-      .from(tblCart)
-      .innerJoin(tblUser, eq(tblUser.id, tblCart.userID))
-      .where(eq(tblUser.id, userID))
+      .from(tblCarts)
+      .innerJoin(tblUsers, eq(tblUsers.id, tblCarts.userID))
+      .where(eq(tblUsers.id, userID))
       .limit(1)
       .then((rows) => rows[0])
 
@@ -210,15 +210,15 @@ export const deleteItem = async (
 
   const checkCart = await db
     .select({
-      cartID: tblCart.id,
+      cartID: tblCarts.id,
       id: tblCartItems.id,
       quantity: tblCartItems.quantity
     })
-    .from(tblCart)
+    .from(tblCarts)
 
-    .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCart.id))
+    .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCarts.id))
     .where(
-      and(eq(tblCart.userID, userID), eq(tblCartItems.productID, productID))
+      and(eq(tblCarts.userID, userID), eq(tblCartItems.productID, productID))
     )
     .limit(1)
     .then((rows) => rows[0])
@@ -242,10 +242,10 @@ export const deleteItem = async (
 export const deleteAll = async (userID: string): Promise<string> => {
   const db = getDbClient()
   const checkCart = await db
-    .select({ cartID: tblCart.id })
-    .from(tblCart)
-    .innerJoin(tblUser, eq(tblUser.id, tblCart.userID))
-    .where(eq(tblCart.userID, userID))
+    .select({ cartID: tblCarts.id })
+    .from(tblCarts)
+    .innerJoin(tblUsers, eq(tblUsers.id, tblCarts.userID))
+    .where(eq(tblCarts.userID, userID))
     .limit(1)
     .then((rows) => rows[0])
 
@@ -256,7 +256,7 @@ export const deleteAll = async (userID: string): Promise<string> => {
       .delete(tblCartItems)
       .where(eq(tblCartItems.cartID, checkCart.cartID))
     //delete cart for user
-    await trx.delete(tblCart).where(eq(tblCart.id, checkCart.cartID))
+    await trx.delete(tblCarts).where(eq(tblCarts.id, checkCart.cartID))
 
     return 'delete all items in cart success'
   })
