@@ -1,9 +1,14 @@
 import {
   addProduct,
   filteredProduct,
+  getBrandsList,
+  getCategoriesList,
   getProductDetail,
+  getProducts,
+  getSaleProductsList,
+  getSearchProducts,
   listFilteredByBrand,
-  specFilterCtrl
+  specFilter
 } from '@/controllers/product.controller'
 import authentication from '@/middlewares/authentication'
 import { authorize } from '@/middlewares/authorization'
@@ -15,10 +20,15 @@ const getProductRouter = () => {
   const router = Router()
 
   /* list of product by category or brand */
+  router.get('', wrap(getProducts))
+  router.get('/search-product', wrap(getSearchProducts))
+  router.get('/sale', wrap(getSaleProductsList))
   router.get('/brand/:brand', wrap(listFilteredByBrand))
   router.get('/category/:category', wrap(filteredProduct))
 
-  router.get('/spec/:category', wrap(specFilterCtrl))
+  router.get('/spec/:category', wrap(specFilter))
+  router.get('/brand-list', wrap(getBrandsList))
+  router.get('/category-list', wrap(getCategoriesList))
 
   /* product detail */
   router.get('/detail/:id', wrap(getProductDetail))

@@ -107,11 +107,13 @@ export const getCartUser = async (userID: string): Promise<Cart | string> => {
       id: tblCartItems.id,
       name: tblProducts.name,
       image: tblProducts.image,
+      color: tblProducts.color,
       quantity: tblCartItems.quantity,
       price: tblCartItems.price
     })
     .from(tblCartItems)
     .leftJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
+
     .where(eq(tblCartItems.cartID, cart.id))
 
   const itemsWithPriceAsNumber = cartItemsRs.map((item) => ({
@@ -131,7 +133,7 @@ export const getCartUser = async (userID: string): Promise<Cart | string> => {
 
 export const updateQuantity = async (
   userID: string,
-  productID: number,
+  cartItemID: number,
   quantity: number
 ): Promise<Cart | string> => {
   const db = getDbClient()
@@ -143,9 +145,7 @@ export const updateQuantity = async (
     })
     .from(tblCarts)
     .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCarts.id))
-    .where(
-      and(eq(tblCarts.userID, userID), eq(tblCartItems.productID, productID))
-    )
+    .where(and(eq(tblCarts.userID, userID), eq(tblCartItems.id, cartItemID)))
     .limit(1)
     .then((rows) => rows[0])
 
@@ -180,6 +180,7 @@ export const updateQuantity = async (
         id: tblCartItems.id,
         name: tblProducts.name,
         image: tblProducts.image,
+        color: tblProducts.color,
         quantity: tblCartItems.quantity,
         price: tblCartItems.price
       })
@@ -204,7 +205,7 @@ export const updateQuantity = async (
 
 export const deleteItem = async (
   userID: string,
-  productID: number
+  cartID: number
 ): Promise<string> => {
   const db = getDbClient()
 
@@ -215,11 +216,8 @@ export const deleteItem = async (
       quantity: tblCartItems.quantity
     })
     .from(tblCarts)
-
     .leftJoin(tblCartItems, eq(tblCartItems.cartID, tblCarts.id))
-    .where(
-      and(eq(tblCarts.userID, userID), eq(tblCartItems.productID, productID))
-    )
+    .where(and(eq(tblCarts.userID, userID), eq(tblCartItems.id, cartID)))
     .limit(1)
     .then((rows) => rows[0])
 
@@ -231,7 +229,7 @@ export const deleteItem = async (
       .delete(tblCartItems)
       .where(
         and(
-          eq(tblCartItems.productID, productID),
+          eq(tblCartItems.id, cartID),
           eq(tblCartItems.cartID, checkCart.cartID as string)
         )
       )

@@ -12,18 +12,16 @@ import { insertAddress } from '@/services/user.service'
 
 const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, phoneNumber } = req.body
-  const data = await register(fullName, email, password, phoneNumber)
+  const registerRs = await register(fullName, email, password, phoneNumber)
 
-  if (typeof data === 'string')
+  if (typeof registerRs === 'string')
     throw new HttpError(
-      'User is not created successfully: ' + data,
+      'User is not created successfully: ' + registerRs,
       HttpStatusCode.BAD_REQUEST
     )
 
-  res.status(HttpStatusCode.CREATED).json({
-    message: 'User created successfully',
-    data
-  })
+  const data = generateAccessToken(registerRs.id, registerRs.role as string)
+  res.status(HttpStatusCode.CREATED).json(data)
 }
 
 const login = async (req: Request, res: Response) => {
@@ -54,10 +52,8 @@ const login = async (req: Request, res: Response) => {
     )
   }
 
-  const jwtToken = generateAccessToken(data.id, data.role)
-  res.status(HttpStatusCode.ACCEPTED).json({
-    token: jwtToken
-  })
+  const token = generateAccessToken(data.id, data.role)
+  res.status(HttpStatusCode.ACCEPTED).json(token)
 }
 
 const getUser = async (req: Request, res: Response) => {
@@ -71,10 +67,7 @@ const getUser = async (req: Request, res: Response) => {
 
   const data = await findUserByID(userID)
 
-  res.status(HttpStatusCode.OK).json({
-    message: 'User information retrieve successfully',
-    data: data
-  })
+  res.status(HttpStatusCode.OK).json(data)
 }
 
 const addAddress = async (req: Request, res: Response) => {
@@ -94,10 +87,7 @@ const addAddress = async (req: Request, res: Response) => {
     country
   )
 
-  return res.status(HttpStatusCode.CREATED).json({
-    message: 'add address success',
-    result: data
-  })
+  return res.status(HttpStatusCode.CREATED).json(data)
 }
 
 // const logout = async (req: Request, res: Response) => {}

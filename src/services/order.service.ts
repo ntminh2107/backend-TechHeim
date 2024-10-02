@@ -163,6 +163,7 @@ export const insertTransaction = async (
     const transactionRs: Transaction = {
       id: insertRs[0].id,
       orderID: insertRs[0].orderID as string,
+      userID: insertRs[0].userID as string,
       type: insertRs[0].type as string,
       deposit: Number(insertRs[0].deposit),
       status: insertRs[0].status as string,

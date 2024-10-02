@@ -2,17 +2,18 @@ import { getDbClient } from '@/database/connection'
 import {
   tblBrands,
   tblCategories,
+  tblCommentProducts,
   tblProductPriceTags,
   tblProducts,
   tblSpecifications
 } from '@/models/product.schema'
-import { PriceTag, Product } from '@/types/product'
-import { SQL, and, between, eq, gte, lte, sql } from 'drizzle-orm'
+import { Brand, Category, Comments, PriceTag, Product } from '@/types/product'
+import { SQL, and, between, eq, gte, isNotNull, lte, sql } from 'drizzle-orm'
 
 export const insertProduct = async (
   name: string,
   image: string,
-  price: string,
+  price: number,
   color: string,
   category: string,
   brand: string,
@@ -72,7 +73,7 @@ export const insertProduct = async (
       .insert(tblProductPriceTags)
       .values({
         productID,
-        price,
+        price: price.toString(),
         percent
       })
       .returning()
@@ -88,8 +89,6 @@ export const insertProduct = async (
         }))
       )
       .returning()
-
-    await trx.insert(tblSpecifications).values([])
 
     const priceWithNumbers = insertedPrice.map((item) => ({
       ...item,
@@ -218,7 +217,7 @@ export const filteredbycategory = async (
   const db = getDbClient()
   const min = queryParams.min
   const max = queryParams.max
-  const limit = 3
+  const limit = 9
   const page = Number(queryParams.page) || 1
   const offset = (page - 1) * limit
   const specFilters = { ...queryParams }
@@ -249,7 +248,7 @@ export const filteredbycategory = async (
     baseCondition.push(lte(tblProductPriceTags.price, max))
   }
 
-  const queryResult = db
+  const queryResult = await db
     .select({
       id: tblProducts.id,
       name: tblProducts.name,
@@ -260,7 +259,6 @@ export const filteredbycategory = async (
       brand: tblBrands.brandName,
       priceTagID: tblProductPriceTags.id,
       price: tblProductPriceTags.price,
-
       percent: tblProductPriceTags.percent
     })
     .from(tblProducts)
@@ -338,4 +336,309 @@ export const filteredFieldOptions = async (
   })
 
   return result
+}
+
+export const insertCommentOnProduct = async (
+  userID: string,
+  productID: number,
+  content: string,
+  rating: number
+): Promise<Comments | string> => {
+  const db = getDbClient()
+
+  return await db.transaction(async (trx) => {
+    const insertCmt = await trx
+      .insert(tblCommentProducts)
+      .values({
+        productID,
+        userID,
+        content,
+        rating: rating.toString()
+      })
+      .returning()
+
+    if (!insertCmt)
+      throw new Error('somthing wrong happens went trying to insert to db')
+    const rs: Comments = {
+      id: insertCmt[0].id,
+      date: insertCmt[0].date as Date,
+      userID: insertCmt[0].userID as string,
+      productID: insertCmt[0].productID as number,
+      content: insertCmt[0].content as string,
+      rating: Number(insertCmt[0].rating)
+    }
+
+    return rs
+  })
+}
+
+export const selectProductComments = async (
+  productID: number
+): Promise<Comments[] | string> => {
+  const db = getDbClient()
+
+  const query = await db
+    .select()
+    .from(tblCommentProducts)
+    .where(eq(tblCommentProducts.productID, productID))
+
+  const rs: Comments[] = query.map((cmt) => ({
+    id: cmt.id,
+    date: cmt.date as Date,
+    userID: cmt.userID as string,
+    productID: cmt.productID as number,
+    content: cmt.content as string,
+    rating: Number(cmt.rating)
+  }))
+  return rs
+}
+
+export const getAllProduct = async (
+  limit?: number,
+  offset?: number
+): Promise<Product[] | string> => {
+  const db = getDbClient()
+  let query
+
+  if (limit || offset) {
+    query = db
+      .select({
+        id: tblProducts.id,
+        name: tblProducts.name,
+        image: tblProducts.image,
+        color: tblProducts.color,
+        rating: tblProducts.rating,
+        category: tblCategories.categoryName,
+        brand: tblBrands.brandName,
+        priceTagID: tblProductPriceTags.id,
+        price: tblProductPriceTags.price,
+        percent: tblProductPriceTags.percent
+      })
+      .from(tblProducts)
+      .leftJoin(
+        tblProductPriceTags,
+        eq(tblProductPriceTags.productID, tblProducts.id)
+      )
+      .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+      .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+      .leftJoin(
+        tblSpecifications,
+        eq(tblSpecifications.productID, tblProducts.id)
+      )
+      .groupBy(
+        tblProducts.id,
+        tblProducts.name,
+        tblProducts.image,
+        tblProducts.color,
+        tblProducts.rating,
+        tblCategories.categoryName,
+        tblBrands.brandName,
+        tblProductPriceTags.price,
+        tblProductPriceTags.id
+      )
+      .limit(limit as number)
+      .offset(offset as number)
+  } else {
+    query = db
+      .select({
+        id: tblProducts.id,
+        name: tblProducts.name,
+        image: tblProducts.image,
+        color: tblProducts.color,
+        rating: tblProducts.rating,
+        category: tblCategories.categoryName,
+        brand: tblBrands.brandName,
+        priceTagID: tblProductPriceTags.id,
+        price: tblProductPriceTags.price,
+        percent: tblProductPriceTags.percent
+      })
+      .from(tblProducts)
+      .leftJoin(
+        tblProductPriceTags,
+        eq(tblProductPriceTags.productID, tblProducts.id)
+      )
+      .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+      .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+      .leftJoin(
+        tblSpecifications,
+        eq(tblSpecifications.productID, tblProducts.id)
+      )
+      .groupBy(
+        tblProducts.id,
+        tblProducts.name,
+        tblProducts.image,
+        tblProducts.color,
+        tblProducts.rating,
+        tblCategories.categoryName,
+        tblBrands.brandName,
+        tblProductPriceTags.price,
+        tblProductPriceTags.id
+      )
+  }
+
+  // Execute the query
+  const result: Product[] = (await query).map((product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image as string,
+    color: product.color as string,
+    rating: Number(product.rating),
+    category: product.category as string,
+    brand: product.brand as string,
+    price: {
+      id: product.priceTagID as number,
+      productID: product.id,
+      price: Number(product.price),
+      percent: product.percent as number
+    }
+  }))
+
+  return result
+}
+
+export const searchProductsByName = async (
+  search: string
+): Promise<Product[]> => {
+  const db = getDbClient()
+
+  const lowerSearchQr = search.toLowerCase()
+
+  const condition = sql`LOWER(${tblProducts.name}) LIKE LOWER(${`%${lowerSearchQr}%`}) OR
+    LOWER(${tblCategories.categoryName}) LIKE LOWER(${`%${lowerSearchQr}%`}) OR
+    LOWER(${tblBrands.brandName}) LIKE LOWER(${`%${lowerSearchQr}%`})`
+
+  const query = await db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName,
+      priceTagID: tblProductPriceTags.id,
+      price: tblProductPriceTags.price,
+      percent: tblProductPriceTags.percent
+    })
+    .from(tblProducts)
+    .leftJoin(
+      tblProductPriceTags,
+      eq(tblProductPriceTags.productID, tblProducts.id)
+    )
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(
+      tblSpecifications,
+      eq(tblSpecifications.productID, tblProducts.id)
+    )
+    .where(condition)
+    .groupBy(
+      tblProducts.id,
+      tblProducts.name,
+      tblProducts.image,
+      tblProducts.color,
+      tblProducts.rating,
+      tblCategories.categoryName,
+      tblBrands.brandName,
+      tblProductPriceTags.price,
+      tblProductPriceTags.id
+    )
+
+  const result: Product[] = (await query).map((product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image as string,
+    color: product.color as string,
+    rating: Number(product.rating),
+    category: product.category as string,
+    brand: product.brand as string,
+    price: {
+      id: product.priceTagID as number,
+      productID: product.id,
+      price: Number(product.price),
+      percent: product.percent as number
+    }
+  }))
+
+  return result
+}
+
+export const getSaleProducts = async (
+  limit: number | 10
+): Promise<Product[] | string> => {
+  const db = getDbClient()
+
+  const query = await db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName,
+      priceTagID: tblProductPriceTags.id,
+      price: tblProductPriceTags.price,
+      percent: tblProductPriceTags.percent
+    })
+    .from(tblProducts)
+    .leftJoin(
+      tblProductPriceTags,
+      eq(tblProductPriceTags.productID, tblProducts.id)
+    )
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(
+      tblSpecifications,
+      eq(tblSpecifications.productID, tblProducts.id)
+    )
+    .where(isNotNull(tblProductPriceTags.percent))
+    .groupBy(
+      tblProducts.id,
+      tblProducts.name,
+      tblProducts.image,
+      tblProducts.color,
+      tblProducts.rating,
+      tblCategories.categoryName,
+      tblBrands.brandName,
+      tblProductPriceTags.price,
+      tblProductPriceTags.id
+    )
+    .limit(limit)
+
+  const result: Product[] = (await query).map((product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image as string,
+    color: product.color as string,
+    rating: Number(product.rating),
+    category: product.category as string,
+    brand: product.brand as string,
+    price: {
+      id: product.priceTagID as number,
+      productID: product.id,
+      price: Number(product.price),
+      percent: product.percent as number
+    }
+  }))
+
+  return result
+}
+
+export const getBrands = async (): Promise<Brand[]> => {
+  const db = getDbClient()
+  const query = await db
+    .select({
+      id: tblBrands.id,
+      brandName: tblBrands.brandName,
+      image: tblBrands.image
+    })
+    .from(tblBrands)
+  return query as Brand[]
+}
+
+export const getCategories = async (): Promise<Category[] | string> => {
+  const db = getDbClient()
+  const query = await db.select().from(tblCategories)
+  return query as Category[]
 }

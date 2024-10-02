@@ -16,13 +16,10 @@ const addAnOrder = async (req: Request, res: Response) => {
     throw new HttpError('address not found', HttpStatusCode.NOT_FOUND)
 
   const data = insertOrder(userID, addressID)
-  return res.status(HttpStatusCode.CREATED).json({
-    message: 'created success!!!',
-    data: data
-  })
+  return res.status(HttpStatusCode.CREATED).json(data)
 }
 
-const getAnOrder = async (req: Request, res: Response) => {
+const getAnOrderDetail = async (req: Request, res: Response) => {
   const userID = req.user?.id as string
   const { orderID } = req.body
 
@@ -30,23 +27,17 @@ const getAnOrder = async (req: Request, res: Response) => {
     throw new HttpError('order not found!!', HttpStatusCode.NOT_FOUND)
 
   const data = getOrder(userID, orderID)
-  return res.status(HttpStatusCode.ACCEPTED).json({
-    message: `get an order with id :${orderID} success!!!`,
-    data: data
-  })
+  return res.status(HttpStatusCode.ACCEPTED).json(data)
 }
 
-const doTransaction = async (req: Request, res: Response) => {
+const addTransaction = async (req: Request, res: Response) => {
   const userID = req.user?.id as string
   const { orderID, type, deposit } = req.body
 
   if (!orderID) throw new HttpError('order not found', HttpStatusCode.NOT_FOUND)
 
   const data = insertTransaction(userID, orderID, type, deposit)
-  return res.status(HttpStatusCode.ACCEPTED).json({
-    message: `transaction complete with order: ${orderID} success!!!`,
-    data: data
-  })
+  return res.status(HttpStatusCode.ACCEPTED).json(data)
 }
 
-export { getAnOrder, addAnOrder, doTransaction }
+export { getAnOrderDetail, addAnOrder, addTransaction }

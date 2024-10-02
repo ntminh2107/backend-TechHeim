@@ -1,4 +1,8 @@
-import { addAnOrder, getAnOrder } from '@/controllers/order.controller'
+import {
+  addAnOrder,
+  addTransaction,
+  getAnOrderDetail
+} from '@/controllers/order.controller'
 import authentication from '@/middlewares/authentication'
 import wrap from '@/utils/wrapError'
 import { orderValidation } from '@/validators'
@@ -10,7 +14,9 @@ const getOrderRouter = () => {
 
   router.post('/add', orderValidation(), wrap(addAnOrder))
 
-  router.get('/:orderID', wrap(getAnOrder))
+  router.get('/:orderID', wrap(getAnOrderDetail))
+
+  router.post('/transaction/add', wrap(addTransaction))
 
   return router
 }
