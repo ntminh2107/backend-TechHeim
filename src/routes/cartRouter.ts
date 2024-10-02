@@ -20,9 +20,17 @@ const getCartRouter = () => {
 
   router.post('/add', addToCartValidation(), wrap(addToCartCtrl))
   router.get('/me', wrap(getCart))
-  router.post('/update', updateQuantityValidation(), wrap(updateQuantityItm))
+  router.patch(
+    '/update/:cartItemID',
+    updateQuantityValidation(),
+    wrap(updateQuantityItm)
+  )
 
-  router.delete('/delete/all', deleteCartItemValidation(), wrap(deleteCart))
+  router.delete(
+    '/delete/:cartItemID',
+    deleteCartItemValidation(),
+    wrap(deleteCart)
+  )
   router.delete('/delete', wrap(deleteCartItem))
 
   return router

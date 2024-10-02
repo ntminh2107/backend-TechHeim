@@ -5,6 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "drizzle-kit generate && tsx src/database/migration.ts && npx nodemon",
+    "start": "npx nodemon",
     "build": "rimraf ./build && tsc",
     "migration:generate": "drizzle-kit generate",
     "migration:up": "node -r esbuild-register src/database/migration.ts"
@@ -15,6 +16,7 @@
   "description": "",
   "devDependencies": {
     "@eslint/js": "^9.9.1",
+    "@types/debug": "^4.1.12",
     "@types/eslint__js": "^8.42.3",
     "@types/node": "^22.5.3",
     "@types/passport": "^1.0.16",

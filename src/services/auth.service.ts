@@ -28,7 +28,7 @@ export const register = async (
   const hashedPassword = await bcrypt.hash(password, 10)
 
   return await db.transaction(async (trx) => {
-    const result = await trx
+    const query = await trx
       .insert(tblUsers)
       .values({
         email,
@@ -40,8 +40,15 @@ export const register = async (
       })
       .returning()
 
-    if (result && result.length > 0) {
+    if (query && query.length > 0) {
       console.log(`Register success with email: ${email}`)
+
+      const result = await trx
+        .select({ id: tblUsers.id, role: tblRoles.role })
+        .from(tblUsers)
+        .innerJoin(tblRoles, eq(tblRoles.id, tblUsers.roleID))
+        .where(eq(tblUsers.id, query[0].id))
+
       return result[0] as User
     } else {
       throw new Error('User registration failed, no user returned.')

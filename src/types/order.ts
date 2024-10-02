@@ -29,6 +29,7 @@ export type ShipMethod = {
 export type Transaction = {
   id: string
   orderID: string
+  userID: string
   type: string
   deposit: number
   status: string

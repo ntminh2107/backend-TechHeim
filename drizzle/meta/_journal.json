@@ -43,6 +43,48 @@
       "when": 1727233331657,
       "tag": "0005_fancy_makkari",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1727251519689,
+      "tag": "0006_parched_microbe",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1727765379085,
+      "tag": "0007_tricky_captain_midlands",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1727769030084,
+      "tag": "0008_new_talisman",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1727769533832,
+      "tag": "0009_boring_spacker_dave",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1727771882171,
+      "tag": "0010_flippant_scourge",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1727859977280,
+      "tag": "0011_numerous_invaders",
+      "breakpoints": true
     }
   ]
 }

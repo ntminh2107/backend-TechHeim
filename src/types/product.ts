@@ -13,16 +13,14 @@ export type Product = {
 
 export type Category = {
   id: number
-  categoryID: string
+  image: string
   categoryName: string
-  totalProducts: number
 }
 
 export type Brand = {
   id: number
-  brandID: string
   brandName: string
-  totalProducts: number
+  image: string
 }
 
 export type Specification = {
@@ -41,7 +39,7 @@ export type PriceTag = {
   saleprice?: number
 }
 
-export type Comment = {
+export type Comments = {
   id: number
   productID: number
   userID: string
