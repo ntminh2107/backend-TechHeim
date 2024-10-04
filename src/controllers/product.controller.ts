@@ -11,7 +11,8 @@ import {
   searchProductsByName,
   getSaleProducts,
   getBrands,
-  getCategories
+  getCategories,
+  addImagePreviews
 } from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
@@ -173,6 +174,13 @@ const getCategoriesList = async (_req: Request, res: Response) => {
   res.status(HttpStatusCode.ACCEPTED).json(data)
 }
 
+const addImagePreview = async (req: Request, res: Response) => {
+  const { productID } = req.body
+  const imagePreview = req.body.imagePreview as string[]
+  const data = await addImagePreviews(productID, imagePreview)
+  res.status(HttpStatusCode.ACCEPTED).json(data)
+}
+
 export {
   addProduct,
   getProductDetail,
@@ -186,5 +194,6 @@ export {
   getSearchProducts,
   getSaleProductsList,
   getBrandsList,
-  getCategoriesList
+  getCategoriesList,
+  addImagePreview
 }

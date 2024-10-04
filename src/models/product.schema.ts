@@ -29,7 +29,8 @@ export const tblProducts = pgTable('products', {
   categoryID: serial('categoryID')
     .references(() => tblCategories.id)
     .notNull(),
-  brandID: serial('brandID').references(() => tblBrands.id)
+  brandID: serial('brandID').references(() => tblBrands.id),
+  imageReview: varchar('imagePreview', { length: 255 }).array()
 })
 
 export const tblSpecifications = pgTable('specifications', {
