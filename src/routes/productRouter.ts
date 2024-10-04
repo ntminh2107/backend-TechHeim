@@ -1,4 +1,5 @@
 import {
+  addImagePreview,
   addProduct,
   filteredProduct,
   getBrandsList,
@@ -22,6 +23,7 @@ const getProductRouter = () => {
   /* list of product by category or brand */
   router.get('', wrap(getProducts))
   router.get('/search-product', wrap(getSearchProducts))
+  router.post('/add-image', wrap(addImagePreview))
   router.get('/sale', wrap(getSaleProductsList))
   router.get('/brand/:brand', wrap(listFilteredByBrand))
   router.get('/category/:category', wrap(filteredProduct))

@@ -8,7 +8,18 @@ import {
   tblSpecifications
 } from '@/models/product.schema'
 import { Brand, Category, Comments, PriceTag, Product } from '@/types/product'
-import { SQL, and, between, eq, gte, isNotNull, lte, sql } from 'drizzle-orm'
+import {
+  SQL,
+  and,
+  between,
+  eq,
+  gte,
+  inArray,
+  isNotNull,
+  lte,
+  or,
+  sql
+} from 'drizzle-orm'
 
 export const insertProduct = async (
   name: string,
@@ -126,7 +137,8 @@ export const productDetail = async (
       color: tblProducts.color,
       rating: tblProducts.rating,
       category: tblCategories.categoryName,
-      brand: tblBrands.brandName
+      brand: tblBrands.brandName,
+      imagePreview: tblProducts.imageReview
     })
     .from(tblProducts)
     .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
@@ -167,7 +179,8 @@ export const productDetail = async (
     category: productDetail.category as string,
     brand: productDetail.brand as string,
     specifications: specifications as { key: string; value: string }[],
-    price: priceTag as PriceTag
+    price: priceTag as PriceTag,
+    imagePreview: productDetail.imagePreview as string[]
   }
   if (!productResult) {
     throw new Error('something wrong when trying to render product detail')
@@ -217,27 +230,29 @@ export const filteredbycategory = async (
   const db = getDbClient()
   const min = queryParams.min
   const max = queryParams.max
-  const limit = 9
-  const page = Number(queryParams.page) || 1
-  const offset = (page - 1) * limit
+  const discount = queryParams.discount === 'true'
   const specFilters = { ...queryParams }
 
   delete specFilters.min
   delete specFilters.max
   delete specFilters.page
   delete specFilters.limit
+  delete specFilters.discount
   const baseCondition = [
-    sql`LOWER(${tblCategories.categoryName}) = ${category}`
+    sql`LOWER(${tblCategories.categoryName}) = LOWER (${category})`
   ]
 
   if (Object.keys(specFilters).length > 0) {
     const specConditions = Object.entries(specFilters).map(([key, value]) => {
+      const values = value.split(',').map((val) => val.trim())
       return and(
-        sql`LOWER(${tblSpecifications.key}) = ${key}`,
-        sql`LOWER(${tblSpecifications.value}) = ${value}`
+        // sql`LOWER(${tblSpecifications.key} = LOWER(${key})`,
+        // sql`LOWER(${tblSpecifications.value}) = LOWER(${value})`
+        eq(tblSpecifications.key, key),
+        inArray(tblSpecifications.value, values)
       )
     })
-    baseCondition.push(and(...specConditions) as SQL<unknown>)
+    baseCondition.push(or(...specConditions) as SQL<unknown>)
   }
 
   if (min !== undefined && max !== undefined) {
@@ -246,6 +261,10 @@ export const filteredbycategory = async (
     baseCondition.push(gte(tblProductPriceTags.price, min))
   } else if (max !== undefined) {
     baseCondition.push(lte(tblProductPriceTags.price, max))
+  }
+
+  if (discount) {
+    baseCondition.push(isNotNull(tblProductPriceTags.percent))
   }
 
   const queryResult = await db
@@ -284,8 +303,6 @@ export const filteredbycategory = async (
       tblProductPriceTags.price,
       tblProductPriceTags.id
     )
-    .limit(limit)
-    .offset(offset)
 
   const result: Product[] = (await queryResult).map((product) => ({
     id: product.id,
@@ -299,7 +316,6 @@ export const filteredbycategory = async (
       id: product.priceTagID as number,
       productID: product.id,
       price: Number(product.price),
-
       percent: product.percent as number
     }
   }))
@@ -309,8 +325,9 @@ export const filteredbycategory = async (
 
 export const filteredFieldOptions = async (
   category: string
-): Promise<{ [key: string]: string[] }> => {
+): Promise<{ key: string; value: string[] }[]> => {
   const db = getDbClient()
+
   const queryResult = await db
     .select({
       key: tblSpecifications.key,
@@ -319,21 +336,28 @@ export const filteredFieldOptions = async (
     .from(tblSpecifications)
     .innerJoin(tblProducts, eq(tblProducts.id, tblSpecifications.productID))
     .innerJoin(tblCategories, eq(tblCategories.id, tblProducts.categoryID))
-    .where(sql`LOWER(${tblCategories.categoryName}) = ${category}`)
+    .where(
+      sql`LOWER(${tblCategories.categoryName}) = ${category.toLowerCase()}`
+    )
     .groupBy(tblSpecifications.key, tblSpecifications.value)
 
-  const result: { [key: string]: string[] } = {}
+  const resultMap: Map<string, Set<string>> = new Map()
 
   queryResult.forEach((spec) => {
     const key = spec.key as string
     const value = spec.value as string
-    if (!result[key]) {
-      result[key] = []
+
+    if (!resultMap.has(key)) {
+      resultMap.set(key, new Set())
     }
-    if (!result[key].includes(value)) {
-      result[key].push(value)
-    }
+
+    resultMap.get(key)?.add(value)
   })
+
+  const result = Array.from(resultMap.entries()).map(([key, valueSet]) => ({
+    key,
+    value: Array.from(valueSet)
+  }))
 
   return result
 }
@@ -641,4 +665,20 @@ export const getCategories = async (): Promise<Category[] | string> => {
   const db = getDbClient()
   const query = await db.select().from(tblCategories)
   return query as Category[]
+}
+
+export const addImagePreviews = async (
+  productID: number,
+  imagePreview: string[]
+): Promise<string> => {
+  const db = getDbClient()
+  return await db.transaction(async (trx) => {
+    const query = await trx
+      .update(tblProducts)
+      .set({ imageReview: imagePreview })
+      .where(eq(tblProducts.id, productID))
+
+    if (!query) throw new Error('error when trying to update image preview')
+    return 'success'
+  })
 }

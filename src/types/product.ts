@@ -9,6 +9,7 @@ export type Product = {
   brand: string
   specifications?: { key: string; value: string }[]
   comments?: Comment[]
+  imagePreview?: string[]
 }
 
 export type Category = {
