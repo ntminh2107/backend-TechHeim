@@ -11,9 +11,7 @@ const errorHandler = (
   _next: NextFunction
 ) => {
   const status =
-    err instanceof HttpError
-      ? err.statusCode
-      : HttpStatusCode.INTERNAL_SERVER_ERROR
+    err instanceof HttpError ? err.statusCode : HttpStatusCode.NOT_MATCH
 
   const message = err.message || 'Internal server error'
 

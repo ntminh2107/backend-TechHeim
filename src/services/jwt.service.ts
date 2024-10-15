@@ -6,7 +6,7 @@ const refreshTokenKey = process.env.REFRESH_TOKEN_KEY || ''
 export const generateAccessToken = (userID: string, role: string) => {
   const payload = { userID, role }
 
-  return jwt.sign(payload, accessTokenKey, { expiresIn: '15m' })
+  return jwt.sign(payload, accessTokenKey, { expiresIn: '1d' })
 }
 
 export const generateRefreshToken = (userID: string) => {
