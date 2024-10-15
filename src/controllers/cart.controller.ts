@@ -25,7 +25,6 @@ const addToCartCtrl = async (req: Request, res: Response) => {
 
 const getCart = async (req: Request, res: Response) => {
   const userID = req.user?.id as string
-
   const data = await getCartUser(userID)
   res.status(HttpStatusCode.ACCEPTED).json(data)
 }

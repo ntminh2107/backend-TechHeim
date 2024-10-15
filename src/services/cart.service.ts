@@ -74,7 +74,7 @@ export const addToCart = async (
         .where(eq(tblCartItems.id, priceAndItem.cartItem.id))
     }
 
-    return 'Item added to cart successfully'
+    return 'success'
   })
 }
 
@@ -163,43 +163,8 @@ export const updateQuantity = async (
         .set({ quantity: quantity })
         .where(eq(tblCartItems.id, checkCart.id as number))
     }
-    const resultUpdated = await trx
-      .select({
-        id: tblCarts.id,
-        userID: tblCarts.userID,
-        status: tblCarts.status
-      })
-      .from(tblCarts)
-      .innerJoin(tblUsers, eq(tblUsers.id, tblCarts.userID))
-      .where(eq(tblUsers.id, userID))
-      .limit(1)
-      .then((rows) => rows[0])
 
-    const listItemsUpdated = await trx
-      .select({
-        id: tblCartItems.id,
-        name: tblProducts.name,
-        image: tblProducts.image,
-        color: tblProducts.color,
-        quantity: tblCartItems.quantity,
-        price: tblCartItems.price
-      })
-      .from(tblCartItems)
-      .innerJoin(tblProducts, eq(tblProducts.id, tblCartItems.productID))
-      .where(eq(tblCartItems.cartID, resultUpdated.id))
-
-    const itemsWithPriceAsNumber = listItemsUpdated.map((item) => ({
-      ...item,
-      price: Number(item.price)
-    }))
-
-    const result: Cart = {
-      id: resultUpdated.id,
-      userID: resultUpdated.userID as string,
-      status: resultUpdated.status as string,
-      cartItems: itemsWithPriceAsNumber as CartItems[]
-    }
-    return result
+    return 'success'
   })
 }
 
@@ -233,7 +198,7 @@ export const deleteItem = async (
           eq(tblCartItems.cartID, checkCart.cartID as string)
         )
       )
-    return 'delete item cart success'
+    return 'success'
   })
 }
 
@@ -256,6 +221,6 @@ export const deleteAll = async (userID: string): Promise<string> => {
     //delete cart for user
     await trx.delete(tblCarts).where(eq(tblCarts.id, checkCart.cartID))
 
-    return 'delete all items in cart success'
+    return 'success'
   })
 }
