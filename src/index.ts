@@ -8,11 +8,13 @@ import getRouter from './routes/routes'
 
 import HttpStatusCode from './utils/httpStatusCode'
 import applyMiddlewares from './middlewares/middlewares'
+import cors from 'cors'
 
 const app = express()
 
 const start = async () => {
   app.use(applyMiddlewares())
+  app.use(cors())
 
   /*Health check */
   app.get('/healthcheck', (_, res) =>
