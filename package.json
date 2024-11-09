@@ -5,6 +5,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:dev": "drizzle-kit generate && tsx src/database/migration.ts && npx nodemon",
+    "proxy": "http://localhost:4000",
     "start": "npx nodemon",
     "build": "rimraf ./build && tsc",
     "migration:generate": "drizzle-kit generate",
