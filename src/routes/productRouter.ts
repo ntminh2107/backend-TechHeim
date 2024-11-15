@@ -12,7 +12,7 @@ import {
   specFilter
 } from '@/controllers/product.controller'
 import authentication from '@/middlewares/authentication'
-import { authorize } from '@/middlewares/authorization'
+// import { authorize } from '@/middlewares/authorization'
 import wrap from '@/utils/wrapError'
 import { productValidation } from '@/validators'
 import { Router } from 'express'
@@ -39,7 +39,8 @@ const getProductRouter = () => {
   router.use(authentication)
 
   /* add a product */
-  router.post('/add', authorize('admin'), productValidation(), wrap(addProduct))
+  // router.post('/add', authorize('admin'), productValidation(), wrap(addProduct))
+  router.post('/add', productValidation(), wrap(addProduct))
 
   return router
 }

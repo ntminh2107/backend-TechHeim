@@ -29,9 +29,9 @@ const getCartRouter = () => {
   router.delete(
     '/delete/:cartItemID',
     deleteCartItemValidation(),
-    wrap(deleteCart)
+    wrap(deleteCartItem)
   )
-  router.delete('/delete', wrap(deleteCartItem))
+  router.delete('/delete', wrap(deleteCart))
 
   return router
 }

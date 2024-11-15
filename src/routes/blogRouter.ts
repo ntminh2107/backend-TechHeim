@@ -6,7 +6,7 @@ import {
   listVideoBlogPost
 } from '@/controllers/blog.controller'
 import authentication from '@/middlewares/authentication'
-import { authorize } from '@/middlewares/authorization'
+// import { authorize } from '@/middlewares/authorization'
 import wrap from '@/utils/wrapError'
 import { Router } from 'express'
 
@@ -17,8 +17,10 @@ const getBlogRouter = () => {
   router.get('/:blogID', wrap(BlogDetail))
 
   router.use(authentication)
-  router.post('/add', authorize('admin'), wrap(addBlogPost))
-  router.post('/video/add', authorize('admin'), wrap(addVideoBlogPost))
+  // router.post('/add', authorize('admin'), wrap(addBlogPost))
+  // router.post('/video/add', authorize('admin'), wrap(addVideoBlogPost))
+  router.post('/add', wrap(addBlogPost))
+  router.post('/video/add', wrap(addVideoBlogPost))
 
   return router
 }

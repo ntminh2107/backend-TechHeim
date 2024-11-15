@@ -26,7 +26,8 @@ const addProduct = async (req: Request, res: Response) => {
     category,
     brand,
     specifications,
-    percent
+    percent,
+    imagePreview
   } = req.body
 
   if (!name || !price || !category || !brand) {
@@ -44,7 +45,8 @@ const addProduct = async (req: Request, res: Response) => {
     category,
     brand,
     specifications,
-    percent
+    percent,
+    imagePreview
   )
 
   res.status(HttpStatusCode.CREATED).json(data)

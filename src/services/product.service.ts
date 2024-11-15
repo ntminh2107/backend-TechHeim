@@ -29,7 +29,8 @@ export const insertProduct = async (
   category: string,
   brand: string,
   specifications: { key: string; value: string }[],
-  percent?: number
+  percent?: number,
+  imagePreview?: string[]
 ): Promise<Product | string> => {
   const db = getDbClient()
 
@@ -74,7 +75,14 @@ export const insertProduct = async (
     //inserted product
     const insertedProduct = await trx
       .insert(tblProducts)
-      .values({ name, image, color, categoryID, brandID })
+      .values({
+        name,
+        image,
+        color,
+        categoryID,
+        brandID,
+        imageReview: imagePreview
+      })
       .returning()
 
     const productID = insertedProduct[0].id

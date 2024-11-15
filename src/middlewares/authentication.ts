@@ -5,8 +5,8 @@ import jwt from 'jsonwebtoken'
 
 const authentication = (req: Request, _res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization
-  if (!authHeader || !authHeader?.startsWith('Bearer ')) {
-    throw new HttpError('Unauthorized', HttpStatusCode.NOT_FOUND)
+  if (!authHeader) {
+    throw new HttpError('Unauthorized', HttpStatusCode.NOT_ALLOWED)
   }
   const token = authHeader.split(' ')[1]
   const isCustomAuth = token.length < 500

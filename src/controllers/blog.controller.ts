@@ -47,12 +47,6 @@ const listBlogPost = async (req: Request, res: Response) => {
   const limit = req.params.limit
   const data = await getBlogsList(sort, Number(limit))
 
-  if (!data)
-    throw new HttpError(
-      'Error while retrieve list blog',
-      HttpStatusCode.INTERNAL_SERVER_ERROR
-    )
-
   res.status(HttpStatusCode.ACCEPTED).json(data)
 }
 
