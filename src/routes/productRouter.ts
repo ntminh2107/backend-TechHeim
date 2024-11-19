@@ -1,6 +1,8 @@
 import {
   addImagePreview,
   addProduct,
+  createBrand,
+  createCategory,
   filteredProduct,
   getBrandsList,
   getCategoriesList,
@@ -9,7 +11,11 @@ import {
   getSaleProductsList,
   getSearchProducts,
   listFilteredByBrand,
-  specFilter
+  removeBrand,
+  removeCategory,
+  specFilter,
+  updateBrand,
+  updateCategory
 } from '@/controllers/product.controller'
 import authentication from '@/middlewares/authentication'
 // import { authorize } from '@/middlewares/authorization'
@@ -41,6 +47,16 @@ const getProductRouter = () => {
   /* add a product */
   // router.post('/add', authorize('admin'), productValidation(), wrap(addProduct))
   router.post('/add', productValidation(), wrap(addProduct))
+
+  /* Category routes */
+  router.post('/category', wrap(createCategory)) // Create a new category
+  router.put('/category/:id', wrap(updateCategory)) // Update an existing category
+  router.delete('/category/:id', wrap(removeCategory)) // Delete a category
+
+  /* Brand routes */
+  router.post('/brand', wrap(createBrand)) // Create a new brand
+  router.put('/brand/:id', wrap(updateBrand)) // Update an existing brand
+  router.delete('/brand/:id', wrap(removeBrand)) // Delete a brand
 
   return router
 }

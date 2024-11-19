@@ -133,6 +133,111 @@ export const insertProduct = async (
   })
 }
 
+export const editProduct = async (
+  productID: number,
+  data: {
+    name?: string
+    image?: string
+    price?: number
+    color?: string
+    category?: string
+    brand?: string
+    specifications?: { key: string; value: string }[]
+    percent?: number
+    imagePreview?: string[]
+  }
+): Promise<Product | string> => {
+  const db = getDbClient()
+
+  return await db.transaction(async (trx) => {
+    let categoryID
+    let brandID
+
+    // Update category if provided
+    if (data.category) {
+      const existedCategory = await trx
+        .select()
+        .from(tblCategories)
+        .where(eq(tblCategories.categoryName, data.category))
+        .limit(1)
+
+      if (existedCategory.length === 0) {
+        const newCategory = await trx
+          .insert(tblCategories)
+          .values({ categoryName: data.category })
+          .returning()
+        categoryID = newCategory[0].id
+      } else {
+        categoryID = existedCategory[0].id
+      }
+    }
+
+    // Update brand if provided
+    if (data.brand) {
+      const existedBrand = await trx
+        .select()
+        .from(tblBrands)
+        .where(eq(tblBrands.brandName, data.brand))
+        .limit(1)
+
+      if (existedBrand.length === 0) {
+        const newBrand = await trx
+          .insert(tblBrands)
+          .values({ brandName: data.brand })
+          .returning()
+        brandID = newBrand[0].id
+      } else {
+        brandID = existedBrand[0].id
+      }
+    }
+
+    // Update product details
+    await trx
+      .update(tblProducts)
+      .set({
+        name: data.name,
+        image: data.image,
+        color: data.color,
+        categoryID,
+        brandID,
+        imageReview: data.imagePreview
+      })
+      .where(eq(tblProducts.id, productID))
+
+    // Update or insert price tag
+    if (data.price !== undefined) {
+      await trx
+        .update(tblProductPriceTags)
+        .set({
+          price: data.price.toString(),
+          percent: data.percent
+        })
+        .where(eq(tblProductPriceTags.productID, productID))
+    }
+
+    // Update product specifications
+    if (data.specifications && data.specifications.length > 0) {
+      // Delete existing specifications
+      await trx
+        .delete(tblSpecifications)
+        .where(eq(tblSpecifications.productID, productID))
+
+      // Insert new specifications
+      await trx.insert(tblSpecifications).values(
+        data.specifications.map((spec) => ({
+          productID,
+          key: spec.key,
+          value: spec.value
+        }))
+      )
+    }
+
+    // Retrieve and return the updated product details
+    const updatedProduct = await productDetail(productID)
+    return updatedProduct
+  })
+}
+
 export const productDetail = async (
   productID: number
 ): Promise<Product | string> => {
@@ -689,4 +794,83 @@ export const addImagePreviews = async (
     if (!query) throw new Error('error when trying to update image preview')
     return 'success'
   })
+}
+
+export const addCategory = async (data: {
+  image: string
+  categoryName: string
+}) => {
+  const db = getDbClient()
+
+  const [newCategory] = await db
+    .insert(tblCategories)
+    .values({
+      image: data.image,
+      categoryName: data.categoryName
+    })
+    .returning()
+  return newCategory
+}
+
+// Edit an existing category
+export const editCategory = async (
+  categoryId: number,
+  data: { image?: string; categoryName?: string }
+) => {
+  const db = getDbClient()
+  const [updatedCategory] = await db
+    .update(tblCategories)
+    .set({
+      ...(data.image && { image: data.image }),
+      ...(data.categoryName && { categoryName: data.categoryName })
+    })
+    .where(eq(tblCategories.id, categoryId))
+    .returning()
+  return updatedCategory
+}
+
+// Delete a category
+export const deleteCategory = async (categoryId: number) => {
+  const db = getDbClient()
+  await db.delete(tblCategories).where(eq(tblCategories.id, categoryId))
+  return { message: 'Category deleted successfully' }
+}
+
+export const addBrand = async (data: { image: string; brandName: string }) => {
+  const db = getDbClient()
+
+  const [newBrand] = await db
+    .insert(tblBrands)
+    .values({
+      image: data.image,
+      brandName: data.brandName
+    })
+    .returning()
+  return newBrand
+}
+
+// Edit an existing brand
+export const editBrand = async (
+  brandId: number,
+  data: { image?: string; brandName?: string }
+) => {
+  const db = getDbClient()
+
+  const [updatedBrand] = await db
+    .update(tblBrands)
+    .set({
+      ...(data.image && { image: data.image }),
+      ...(data.brandName && { brandName: data.brandName })
+    })
+    .where(eq(tblBrands.id, brandId))
+    .returning()
+  return updatedBrand
+}
+
+// Delete a brand
+export const deleteBrand = async (brandId: number) => {
+  const db = getDbClient()
+
+  await db.delete(tblBrands).where(eq(tblBrands.id, brandId))
+  return { message: 'Brand deleted successfully' }
 }

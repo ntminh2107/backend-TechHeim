@@ -12,7 +12,13 @@ import {
   getSaleProducts,
   getBrands,
   getCategories,
-  addImagePreviews
+  addImagePreviews,
+  addCategory,
+  editCategory,
+  deleteCategory,
+  addBrand,
+  editBrand,
+  deleteBrand
 } from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
@@ -183,6 +189,77 @@ const addImagePreview = async (req: Request, res: Response) => {
   res.status(HttpStatusCode.ACCEPTED).json(data)
 }
 
+const createCategory = async (req: Request, res: Response) => {
+  const { image, categoryName } = req.body
+  if (!categoryName) {
+    throw new HttpError('Category name is required', HttpStatusCode.BAD_REQUEST)
+  }
+
+  const newCategory = await addCategory({ image, categoryName })
+  res.status(HttpStatusCode.CREATED).json(newCategory)
+}
+
+const updateCategory = async (req: Request, res: Response) => {
+  const categoryId = Number(req.params.id)
+  const { image, categoryName } = req.body
+
+  if (!categoryId) {
+    throw new HttpError('Category ID is required', HttpStatusCode.BAD_REQUEST)
+  }
+
+  const updatedCategory = await editCategory(categoryId, {
+    image,
+    categoryName
+  })
+  res.status(HttpStatusCode.OK).json(updatedCategory)
+}
+
+const removeCategory = async (req: Request, res: Response) => {
+  const categoryId = Number(req.params.id)
+
+  if (!categoryId) {
+    throw new HttpError('Category ID is required', HttpStatusCode.BAD_REQUEST)
+  }
+
+  await deleteCategory(categoryId)
+  res
+    .status(HttpStatusCode.OK)
+    .json({ message: 'Category deleted successfully' })
+}
+
+const createBrand = async (req: Request, res: Response) => {
+  const { image, brandName } = req.body
+  if (!brandName) {
+    throw new HttpError('Brand name is required', HttpStatusCode.BAD_REQUEST)
+  }
+
+  const newBrand = await addBrand({ image, brandName })
+  res.status(HttpStatusCode.CREATED).json(newBrand)
+}
+
+const updateBrand = async (req: Request, res: Response) => {
+  const brandId = Number(req.params.id)
+  const { image, brandName } = req.body
+
+  if (!brandId) {
+    throw new HttpError('Brand ID is required', HttpStatusCode.BAD_REQUEST)
+  }
+
+  const updatedBrand = await editBrand(brandId, { image, brandName })
+  res.status(HttpStatusCode.OK).json(updatedBrand)
+}
+
+const removeBrand = async (req: Request, res: Response) => {
+  const brandId = Number(req.params.id)
+
+  if (!brandId) {
+    throw new HttpError('Brand ID is required', HttpStatusCode.BAD_REQUEST)
+  }
+
+  await deleteBrand(brandId)
+  res.status(HttpStatusCode.OK).json({ message: 'Brand deleted successfully' })
+}
+
 export {
   addProduct,
   getProductDetail,
@@ -197,5 +274,11 @@ export {
   getSaleProductsList,
   getBrandsList,
   getCategoriesList,
-  addImagePreview
+  addImagePreview,
+  createCategory,
+  updateCategory,
+  removeCategory,
+  createBrand,
+  updateBrand,
+  removeBrand
 }
