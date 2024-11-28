@@ -1,11 +1,12 @@
 import { getDbClient } from '@/database/connection'
 import { tblAddresses, tblUsers } from '@/models/user.schema'
 import { Address } from '@/types/user'
-import { eq } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 
 export const insertAddress = async (
   userID: string,
   fullname: string,
+  phoneNumber: string,
   address: string,
   district: string,
   city: string,
@@ -26,6 +27,7 @@ export const insertAddress = async (
       .values({
         userID,
         fullname,
+        phoneNumber,
         address,
         district,
         city,
@@ -35,4 +37,38 @@ export const insertAddress = async (
     if (!resAddress) throw new Error('something wrong happen')
     return resAddress as Address
   })
+}
+
+export const getAllAddressesByUserID = async (
+  userID: string
+): Promise<Address[]> => {
+  const db = getDbClient()
+  const addresses = await db
+    .select()
+    .from(tblAddresses)
+    .where(eq(tblAddresses.userID, userID))
+    .then((rows) => rows)
+
+  if (addresses.length === 0)
+    throw new Error('No addresses found for this user')
+
+  return addresses as Address[]
+}
+
+export const deleteAnAddress = async (
+  userID: string,
+  addressID: number
+): Promise<string> => {
+  const db = getDbClient()
+
+  const deletedCount = await db
+    .delete(tblAddresses)
+    .where(and(eq(tblAddresses.userID, userID), eq(tblAddresses.id, addressID)))
+    .returning()
+
+  if (deletedCount.length === 0) {
+    throw new Error('Address not found or does not belong to the user')
+  }
+
+  return `Address with ID ${addressID} has been deleted successfully.`
 }

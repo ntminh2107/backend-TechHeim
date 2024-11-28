@@ -12,6 +12,7 @@ export type Order = {
   userID: string
   address: Address
   status: string
+  shipMethod: ShipMethod
   orderItems: OrderItems[]
   total: number
   transaction?: Transaction[]

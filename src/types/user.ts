@@ -16,6 +16,7 @@ export type Role = {
 
 export type Address = {
   id: number
+  phoneNumber: string
   fullname: string
   address: string
   district: string

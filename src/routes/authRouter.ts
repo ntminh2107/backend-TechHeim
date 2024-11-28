@@ -1,5 +1,7 @@
 import {
   addAddress,
+  deleteSelectedAddress,
+  getAllAddresses,
   getUser,
   login,
   registerUser
@@ -42,6 +44,8 @@ const getAuthRouter = () => {
   )
 
   router.post('/address/add', wrap(addAddress))
+  router.get('/address/me', wrap(getAllAddresses))
+  router.delete('/address/delete/:addressID', wrap(deleteSelectedAddress))
 
   return router
 }

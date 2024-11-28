@@ -8,7 +8,11 @@ import { Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import { generateAccessToken } from '@/services/jwt.service'
 import { HttpError } from '@/libs/HttpError'
-import { insertAddress } from '@/services/user.service'
+import {
+  deleteAnAddress,
+  getAllAddressesByUserID,
+  insertAddress
+} from '@/services/user.service'
 
 const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, phoneNumber } = req.body
@@ -25,6 +29,7 @@ const registerUser = async (req: Request, res: Response) => {
 }
 
 const login = async (req: Request, res: Response) => {
+  console.log('req', req.body)
   const data = await findUserByEmail(req.body.email)
   if (!data) {
     throw new HttpError(
@@ -72,7 +77,7 @@ const getUser = async (req: Request, res: Response) => {
 
 const addAddress = async (req: Request, res: Response) => {
   const userID = req.user?.id
-  const { name, address, district, city, country } = req.body
+  const { fullName, address, district, city, phoneNumber, country } = req.body
   if (!userID)
     throw new HttpError(
       'no user found with this ID',
@@ -80,7 +85,8 @@ const addAddress = async (req: Request, res: Response) => {
     )
   const data = await insertAddress(
     userID,
-    name,
+    fullName,
+    phoneNumber,
     address,
     district,
     city,
@@ -90,6 +96,69 @@ const addAddress = async (req: Request, res: Response) => {
   return res.status(HttpStatusCode.CREATED).json(data)
 }
 
+const getAllAddresses = async (req: Request, res: Response) => {
+  const userID = req.user?.id
+
+  if (!userID) {
+    throw new HttpError(
+      'User ID not found in request',
+      HttpStatusCode.NOT_ALLOWED
+    )
+  }
+
+  try {
+    const addresses = await getAllAddressesByUserID(userID)
+    if (addresses.length === 0) {
+      return res
+        .status(HttpStatusCode.NOT_FOUND)
+        .json({ message: 'No addresses found for this user' })
+    }
+    return res.status(HttpStatusCode.OK).json(addresses)
+  } catch (error) {
+    throw new HttpError(
+      'Failed to retrieve addresses',
+      HttpStatusCode.INTERNAL_SERVER_ERROR
+    )
+  }
+}
+
+const deleteSelectedAddress = async (req: Request, res: Response) => {
+  const userID = req.user?.id // Assuming req.user contains the authenticated user's data
+  const { addressID } = req.params
+
+  if (!userID) {
+    throw new HttpError(
+      'User ID not found in request',
+      HttpStatusCode.NOT_MATCH
+    )
+  }
+
+  if (!addressID) {
+    throw new HttpError('Address ID is required', HttpStatusCode.BAD_REQUEST)
+  }
+
+  try {
+    const result = await deleteAnAddress(userID, Number(addressID))
+
+    return res.status(HttpStatusCode.OK).json({
+      message: result
+    })
+  } catch (error) {
+    console.error('Error deleting address:', error)
+    throw new HttpError(
+      'Failed to delete address',
+      HttpStatusCode.INTERNAL_SERVER_ERROR
+    )
+  }
+}
+
 // const logout = async (req: Request, res: Response) => {}
 
-export { registerUser, login, getUser, addAddress }
+export {
+  registerUser,
+  login,
+  getUser,
+  addAddress,
+  getAllAddresses,
+  deleteSelectedAddress
+}

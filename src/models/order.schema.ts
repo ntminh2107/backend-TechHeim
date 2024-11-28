@@ -15,6 +15,7 @@ export const tblOrders = pgTable('orders', {
   userID: uuid('userID').references(() => tblUsers.id),
   addressID: integer('addressID'),
   status: varchar('status', { length: 255 }).default('pending'),
+  shipMethodID: integer('shipMethodID').references(() => tblShipMethod.id),
   total: decimal('totalPrice', { precision: 10, scale: 2 }).default('0.00'),
   hasPaid: decimal('hasPaid', { precision: 10, scale: 2 }).default('0.00'),
   createdAt: timestamp('createdAt').defaultNow().notNull(),
@@ -42,9 +43,10 @@ export const tblTransactions = pgTable('transactions', {
   id: uuid('id').primaryKey().defaultRandom(),
   orderID: uuid('orderID').references(() => tblOrders.id),
   userID: uuid('userID').references(() => tblUsers.id),
-  type: varchar('type', { length: 255 }),
-  deposit: decimal('deposit', { precision: 10, scale: 2 }),
-  status: varchar('status', { length: 255 }).default('created'),
-  createdAt: timestamp('createdAt').defaultNow(),
-  updatedAt: timestamp('updatedAt').defaultNow()
+  stripePaymentIntentID: varchar('stripePaymentIntentID', { length: 255 }), // Stripe Payment Intent
+  stripeStatus: varchar('stripeStatus', { length: 255 }).default('created'), // Stripe Status
+  amount: decimal('amount', { precision: 10, scale: 2 }), // Transaction Amount
+  currency: varchar('currency', { length: 3 }).default('USD'), // Currency Code
+  receiptURL: varchar('receiptURL', { length: 1024 }), // Stripe Receipt URL
+  createdAt: timestamp('createdAt').defaultNow()
 })
