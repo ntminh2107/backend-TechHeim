@@ -1,5 +1,6 @@
 import { HttpError } from '@/libs/HttpError'
 import {
+  editBlog,
   getBlogDetail,
   getBlogsList,
   getVideoBlogList,
@@ -63,10 +64,52 @@ const BlogDetail = async (req: Request, res: Response) => {
   res.status(HttpStatusCode.ACCEPTED).json(data)
 }
 
+const editBlogPost = async (req: Request, res: Response) => {
+  const { id } = req.params // Extract blog ID from route parameters
+  const { title, author, readTime, tags, content, image } = req.body
+
+  try {
+    // Validate the ID
+    const blogID = parseInt(id, 10)
+    if (isNaN(blogID)) {
+      throw new HttpError('Invalid blog ID', HttpStatusCode.BAD_REQUEST)
+    }
+
+    // Call the editBlog service
+    const data = await editBlog(blogID, {
+      title,
+      author,
+      readTime,
+      tags,
+      content,
+      image
+    })
+
+    if (!data) {
+      throw new HttpError(
+        'Error while editing blog',
+        HttpStatusCode.INTERNAL_SERVER_ERROR
+      )
+    }
+
+    res.status(HttpStatusCode.OK).json(data)
+  } catch (error) {
+    console.error('Error while editing blog:', error)
+    if (error instanceof HttpError) {
+      res.status(error.statusCode).json({ message: error.message })
+    } else {
+      res
+        .status(HttpStatusCode.INTERNAL_SERVER_ERROR)
+        .json({ message: 'An unexpected error occurred' })
+    }
+  }
+}
+
 export {
   addBlogPost,
   listBlogPost,
   BlogDetail,
   listVideoBlogPost,
-  addVideoBlogPost
+  addVideoBlogPost,
+  editBlogPost
 }

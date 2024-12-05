@@ -2,6 +2,7 @@ import {
   addBlogPost,
   addVideoBlogPost,
   BlogDetail,
+  editBlogPost,
   listBlogPost,
   listVideoBlogPost
 } from '@/controllers/blog.controller'
@@ -20,6 +21,7 @@ const getBlogRouter = () => {
   // router.post('/add', authorize('admin'), wrap(addBlogPost))
   // router.post('/video/add', authorize('admin'), wrap(addVideoBlogPost))
   router.post('/add', wrap(addBlogPost))
+  router.put('/edit/:id', wrap(editBlogPost))
   router.post('/video/add', wrap(addVideoBlogPost))
 
   return router

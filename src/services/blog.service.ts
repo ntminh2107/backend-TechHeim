@@ -53,6 +53,85 @@ export const insertBlog = async (
   return result
 }
 
+export const editBlog = async (
+  blogID: number,
+  updates: {
+    title?: string
+    author?: string
+    readTime?: string
+    tags?: string[]
+    content?: string
+    image?: string
+  }
+): Promise<Blog | string> => {
+  const db = getDbClient()
+
+  // Check if the blog exists
+  const existingBlog = await db
+    .select()
+    .from(tblBlogs)
+    .where(eq(tblBlogs.id, blogID))
+    .limit(1)
+
+  if (!existingBlog.length) {
+    throw new Error(`Blog with ID ${blogID} does not exist.`)
+  }
+
+  // Update the blog table
+  const { tags, ...blogUpdates } = updates
+  if (Object.keys(blogUpdates).length > 0) {
+    await db.update(tblBlogs).set(blogUpdates).where(eq(tblBlogs.id, blogID))
+  }
+
+  // Handle tag updates if tags are provided
+  if (tags) {
+    // Delete existing tags for the blog
+    await db.delete(tblTagBlogs).where(eq(tblTagBlogs.blogID, blogID))
+
+    // Insert new tags
+    await db.insert(tblTagBlogs).values(
+      tags.map((tag) => ({
+        blogID,
+        tag
+      }))
+    )
+  }
+
+  // Fetch the updated blog with tags
+  const [updatedBlog] = await db
+    .select({
+      id: tblBlogs.id,
+      title: tblBlogs.title,
+      author: tblBlogs.author,
+      readTime: tblBlogs.readTime,
+      releaseDate: tblBlogs.releaseDate,
+      image: tblBlogs.image,
+      content: tblBlogs.content
+    })
+    .from(tblBlogs)
+    .where(eq(tblBlogs.id, blogID))
+
+  const updatedTags = await db
+    .select({ tag: tblTagBlogs.tag })
+    .from(tblTagBlogs)
+    .where(eq(tblTagBlogs.blogID, blogID))
+
+  const result: Blog = {
+    id: updatedBlog.id,
+    title: updatedBlog.title,
+    author: updatedBlog.author,
+    readTime: updatedBlog.readTime,
+    releaseDate: updatedBlog.releaseDate as Date,
+    tags: updatedTags
+      .map((tagRow) => tagRow.tag)
+      .filter((tag): tag is string => tag !== null),
+    image: updatedBlog.image,
+    content: updatedBlog.content
+  }
+
+  return result
+}
+
 export const insertVideoBlog = async (
   title: string,
   url: string,

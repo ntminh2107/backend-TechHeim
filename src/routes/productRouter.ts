@@ -3,6 +3,7 @@ import {
   addProduct,
   createBrand,
   createCategory,
+  editProductController,
   filteredProduct,
   getBrandsList,
   getCategoriesList,
@@ -40,6 +41,7 @@ const getProductRouter = () => {
 
   /* product detail */
   router.get('/detail/:id', wrap(getProductDetail))
+  router.put('/edit/:productID', wrap(editProductController)) // Add route for editing product
 
   /*use authen for specific function */
   router.use(authentication)

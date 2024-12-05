@@ -25,13 +25,12 @@ const getCartRouter = () => {
     updateQuantityValidation(),
     wrap(updateQuantityItm)
   )
-
+  router.delete('/delete', wrap(deleteCart))
   router.delete(
     '/delete/:cartItemID',
     deleteCartItemValidation(),
     wrap(deleteCartItem)
   )
-  router.delete('/delete', wrap(deleteCart))
 
   return router
 }

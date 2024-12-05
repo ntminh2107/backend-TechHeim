@@ -1,11 +1,16 @@
 import { getDbClient } from '@/database/connection'
 import { tblCarts, tblCartItems } from '@/models/cart.schema'
-import { tblOrderItems, tblOrders, tblShipMethod } from '@/models/order.schema'
+import {
+  tblOrderItems,
+  tblOrders,
+  tblShipMethod,
+  tblTransactions
+} from '@/models/order.schema'
 import { tblProducts } from '@/models/product.schema'
 import { tblAddresses, tblUsers } from '@/models/user.schema'
-import { Order, OrderItems, ShipMethod } from '@/types/order'
+import { Order, OrderItems, ShipMethod, Transaction } from '@/types/order'
 import { Address } from '@/types/user'
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 export const insertOrder = async (
   userID: string,
@@ -50,14 +55,24 @@ export const insertOrder = async (
 
     // Prepare order items
     const orderItems = cartItemRs.map((item) => {
-      const total: number = Number(item.price) * (item.quantity as number)
+      const quantity = Number(item.quantity)
+      const price = Number(item.price)
+
+      // Validate quantity and price
+      if (!quantity || !price) {
+        throw new Error(
+          `Invalid item detected in cart: Product ID ${item.productID}, quantity: ${quantity}, price: ${price}`
+        )
+      }
+
+      const total = quantity * price // Total price for this item
       totalOrder += total
 
       return {
         orderID,
         productID: item.productID as number,
-        quantity: item.quantity as number,
-        price: total.toString()
+        quantity,
+        price: price.toString() // Store the unit price
       }
     })
 
@@ -155,7 +170,6 @@ export const insertOrder = async (
     return result
   })
 }
-
 /*TODO: GET order + do transaction w/ noti */
 export const getOrder = async (
   userID: string,
@@ -191,6 +205,8 @@ export const getOrder = async (
     .select({
       id: tblAddresses.id,
       fullname: tblAddresses.fullname,
+      phoneNumber: tblAddresses.phoneNumber,
+      district: tblAddresses.district,
       address: tblAddresses.address,
       city: tblAddresses.city,
       country: tblAddresses.country
@@ -322,4 +338,222 @@ export const getAllShipMethods = async (): Promise<ShipMethod[]> => {
     price: Number(method.price)
   }))
   return listShipMethod
+}
+
+export const saveTransaction = async (
+  orderID: string,
+  userID: string,
+  stripePaymentIntentID: string,
+  stripeStatus: string,
+  amount: number,
+  receiptURL: string
+): Promise<any> => {
+  const db = await getDbClient()
+  try {
+    const res = await db
+      .insert(tblTransactions)
+      .values({
+        orderID: orderID,
+        userID: userID,
+        stripePaymentIntentID: stripePaymentIntentID,
+        stripeStatus: stripeStatus,
+        amount: amount.toString(),
+        receiptURL: receiptURL,
+        currency: 'USD'
+      })
+      .returning()
+    await db
+      .update(tblOrders)
+      .set({ status: 'complete' })
+      .where(eq(tblOrders.id, orderID))
+    console.log('Transaction saved successfully.')
+    return res
+  } catch (error) {
+    console.error('Error saving transaction:', error)
+    throw new Error('Failed to save transaction.')
+  }
+}
+
+export const getTransactionByOrderID = async (
+  orderID: string
+): Promise<Transaction> => {
+  const db = getDbClient()
+
+  try {
+    // Fetch transaction details based on orderID
+    const transaction = await db
+      .select()
+      .from(tblTransactions)
+      .where(eq(tblTransactions.orderID, orderID))
+      .limit(1)
+      .then((rows) => rows[0]) // Get the first row if available
+
+    if (!transaction) {
+      throw new Error(`Transaction for orderID ${orderID} not found`)
+    }
+
+    const res: Transaction = {
+      id: transaction.id,
+      userID: transaction.userID as string,
+      orderID: transaction.orderID as string,
+      stripePaymentIntentID: transaction.stripePaymentIntentID as string,
+      stripeStatus: transaction.stripeStatus as string,
+      amount: Number(transaction.amount),
+      currency: transaction.currency as string,
+      receiptURL: transaction.receiptURL as string,
+      createdAt: transaction.createdAt as Date
+    }
+    return res
+  } catch (error) {
+    console.error('Error fetching transaction by orderID:', error)
+    throw new Error('Failed to fetch transaction.')
+  }
+}
+
+export const getAllOrders = async (userID: string): Promise<Order[]> => {
+  const db = getDbClient()
+
+  // Fetch all orders for the user
+  const orders = await db
+    .select()
+    .from(tblOrders)
+    .where(eq(tblOrders.userID, userID))
+    .then((rows) => rows)
+
+  const results: Order[] = []
+
+  for (const order of orders) {
+    // Fetch shipping method details
+    const shippingMethod = await db
+      .select()
+      .from(tblShipMethod)
+      .where(eq(tblShipMethod.id, order.shipMethodID as number))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    const selectedShipMethod: ShipMethod = {
+      id: shippingMethod.id,
+      method: shippingMethod.method as string,
+      detail: shippingMethod.detail as string,
+      price: Number(shippingMethod.price)
+    }
+
+    // Fetch address details
+    const address = await db
+      .select({
+        id: tblAddresses.id,
+        fullname: tblAddresses.fullname,
+        address: tblAddresses.address,
+        district: tblAddresses.district,
+        city: tblAddresses.city,
+        country: tblAddresses.country,
+        phoneNumber: tblAddresses.phoneNumber
+      })
+      .from(tblAddresses)
+      .where(eq(tblAddresses.id, order.addressID as number))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    if (!address) {
+      throw new Error(`Address not found for order ID: ${order.id}`)
+    }
+
+    const addressObj: Address = {
+      id: address.id,
+      fullname: address.fullname as string,
+      address: address.address as string,
+      district: address.district as string,
+      city: address.city as string,
+      country: address.country as string,
+      phoneNumber: address.phoneNumber as string
+    }
+
+    // Fetch order items
+    const orderItems = await db
+      .select({
+        id: tblOrderItems.id,
+        name: tblProducts.name,
+        image: tblProducts.image,
+        quantity: tblOrderItems.quantity,
+        price: tblOrderItems.price
+      })
+      .from(tblOrderItems)
+      .leftJoin(tblProducts, eq(tblProducts.id, tblOrderItems.productID))
+      .where(eq(tblOrderItems.orderID, order.id as string))
+      .then((rows) =>
+        rows.map((item) => ({
+          ...item,
+          price: Number(item.price)
+        }))
+      )
+
+    let transaction: Transaction | undefined = undefined
+
+    // If the order status is "success", fetch the transaction
+    if (order.status === 'success') {
+      const transactionData = await db
+        .select()
+        .from(tblTransactions)
+        .where(eq(tblTransactions.orderID, order.id))
+        .limit(1)
+        .then((rows) => rows[0])
+
+      if (transactionData) {
+        transaction = {
+          id: transactionData.id,
+          orderID: transactionData.orderID as string,
+          userID: transactionData.userID as string,
+          stripePaymentIntentID:
+            transactionData.stripePaymentIntentID as string,
+          stripeStatus: transactionData.stripeStatus as string,
+          amount: Number(transactionData.amount),
+          currency: transactionData.currency as string,
+          receiptURL: transactionData.receiptURL as string,
+          createdAt: transactionData.createdAt as Date
+        }
+      }
+    }
+
+    // Assemble the order object
+    const orderDetail: Order = {
+      id: order.id,
+      userID: order.userID as string,
+      address: addressObj,
+      status: order.status as string,
+      shipMethod: selectedShipMethod,
+      orderItems: orderItems as OrderItems[],
+      total: Number(order.total),
+      transaction: transaction, // Include transaction if available
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt
+    }
+
+    results.push(orderDetail)
+  }
+
+  return results
+}
+
+export const getTopSellingProducts = async () => {
+  const db = getDbClient()
+  // Replace `orderItems` with your actual order items table
+  const result = await db.execute(
+    sql`
+      SELECT 
+        products.id AS product_id,
+        products.name AS product_name,
+        SUM(o.quantity) AS total_quantity,
+        SUM(o.quantity * pp.price) AS total_revenue
+      FROM 
+        products
+      JOIN 
+        orderItems o ON p.id = o.productID
+      GROUP BY 
+        p.id, p.name
+      ORDER BY 
+        total_quantity DESC
+      LIMIT 3
+    `
+  )
+  return result.rows
 }

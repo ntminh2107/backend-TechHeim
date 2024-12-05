@@ -18,7 +18,8 @@ import {
   deleteCategory,
   addBrand,
   editBrand,
-  deleteBrand
+  deleteBrand,
+  editProduct
 } from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
@@ -260,6 +261,53 @@ const removeBrand = async (req: Request, res: Response) => {
   res.status(HttpStatusCode.OK).json({ message: 'Brand deleted successfully' })
 }
 
+const editProductController = async (req: Request, res: Response) => {
+  try {
+    const { productID } = req.params // Assuming product ID is passed as a route parameter
+    const {
+      name,
+      image,
+      price,
+      color,
+      category,
+      brand,
+      specifications,
+      percent,
+      imagePreview
+    } = req.body
+
+    // Validate productID
+    if (!productID) {
+      return res.status(400).json({ message: 'Product ID is required' })
+    }
+
+    // Construct data object
+    const updateData = {
+      ...(name && { name }),
+      ...(image && { image }),
+      ...(price && { price }),
+      ...(color && { color }),
+      ...(category && { category }),
+      ...(brand && { brand }),
+      ...(specifications && { specifications }),
+      ...(percent && { percent }),
+      ...(imagePreview && { imagePreview })
+    }
+
+    // Call the editProduct service
+    const updatedProduct = await editProduct(Number(productID), updateData)
+
+    if (typeof updatedProduct === 'string') {
+      return res.status(400).json({ message: updatedProduct })
+    }
+
+    return res.status(200).json(updatedProduct)
+  } catch (error) {
+    console.error('Error in editProductController:', error)
+    return res.status(500).json({ message: 'An error occurred', error })
+  }
+}
+
 export {
   addProduct,
   getProductDetail,
@@ -280,5 +328,6 @@ export {
   removeCategory,
   createBrand,
   updateBrand,
-  removeBrand
+  removeBrand,
+  editProductController
 }
