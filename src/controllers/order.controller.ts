@@ -2,8 +2,10 @@ import { HttpError } from '@/libs/HttpError'
 import {
   createShipMethod,
   getAllOrders,
+  getAllOrdersForAdmin,
   getAllShipMethods,
   getOrder,
+  getOrderByAdmin,
   getTopSellingProducts,
   getTransactionByOrderID,
   insertOrder,
@@ -253,6 +255,34 @@ const getBestSellers = async (_req: Request, res: Response) => {
   }
 }
 
+const getAllOrdersForAdminController = async (req: Request, res: Response) => {
+  try {
+    const page = parseInt(req.query.page as string, 10) || 1
+    const pageSize = parseInt(req.query.pageSize as string, 10) || 10
+    const data = await getAllOrdersForAdmin(page, pageSize)
+    return res.status(200).json(data)
+  } catch (error) {
+    console.error('Error fetching orders:', error)
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+const getDetailOrderForAdminController = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { orderID } = req.params
+    const data = await getOrderByAdmin(orderID)
+    return res.status(200).json(data)
+  } catch (error) {
+    console.error('Error fetching orders:', error)
+    return res.status(500).json({ message: 'Internal Server Error' })
+  }
+}
+
+export default getAllOrdersForAdminController
+
 export {
   getAnOrderDetail,
   addAnOrder,
@@ -260,5 +290,7 @@ export {
   addShipMethod,
   saveTransactionController,
   getAllOrdersController,
-  getBestSellers
+  getBestSellers,
+  getAllOrdersForAdminController,
+  getDetailOrderForAdminController
 }

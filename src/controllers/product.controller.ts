@@ -145,15 +145,33 @@ const getProductComments = async (req: Request, res: Response) => {
   res.status(HttpStatusCode.CREATED).json(data)
 }
 
-const getProducts = async (req: Request, res: Response) => {
-  const limit = req.query.limit
-    ? parseInt(req.query.limit as string, 10)
-    : undefined
-  const offset = req.query.offset
-    ? parseInt(req.query.offset as string, 10)
-    : undefined
-  const data = await getAllProduct(limit, offset)
-  res.status(HttpStatusCode.ACCEPTED).json(data)
+const getAllProductController = async (req: Request, res: Response) => {
+  try {
+    // Extract pagination parameters from query
+    const currentPage = parseInt(req.query.page as string, 10) || 1
+    const itemsPerPage = parseInt(req.query.pageSize as string, 10) || 4
+
+    // Extract sort order, default to 'asc'
+    const sortOrder: 'asc' | 'desc' =
+      (req.query.sortOrder as 'asc' | 'desc') || 'asc'
+
+    // Extract search query for filtering by product name, optional
+    const searchQuery = req.query.search as string | undefined
+
+    // Call the getAllProduct service function with search query
+    const data = await getAllProduct(
+      currentPage,
+      itemsPerPage,
+      sortOrder,
+      searchQuery
+    )
+
+    // Send the response with the result and pagination metadata
+    res.status(200).json(data)
+  } catch (error) {
+    console.error('Error fetching products:', error)
+    res.status(500).json({ error: 'Failed to fetch products' })
+  }
 }
 
 const getSearchProducts = async (req: Request, res: Response) => {
@@ -317,7 +335,6 @@ export {
   specFilter,
   addCommentToProduct,
   getProductComments,
-  getProducts,
   getSearchProducts,
   getSaleProductsList,
   getBrandsList,
@@ -327,6 +344,7 @@ export {
   updateCategory,
   removeCategory,
   createBrand,
+  getAllProductController,
   updateBrand,
   removeBrand,
   editProductController

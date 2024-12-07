@@ -11,6 +11,7 @@ import { tblAddresses, tblUsers } from '@/models/user.schema'
 import { Order, OrderItems, ShipMethod, Transaction } from '@/types/order'
 import { Address } from '@/types/user'
 import { and, eq, sql } from 'drizzle-orm'
+import { findUserByID } from './auth.service'
 
 export const insertOrder = async (
   userID: string,
@@ -233,6 +234,30 @@ export const getOrder = async (
     price: Number(item.price)
   }))
 
+  let transaction: Transaction | undefined = undefined
+
+  if (orderRs.orders.status === 'complete') {
+    const transactionData = await db
+      .select()
+      .from(tblTransactions)
+      .where(eq(tblTransactions.orderID, orderRs.orders.id))
+      .limit(1)
+      .then((rows) => rows[0])
+    if (transactionData) {
+      transaction = {
+        id: transactionData.id,
+        orderID: transactionData.orderID as string,
+        userID: transactionData.userID as string,
+        stripePaymentIntentID: transactionData.stripePaymentIntentID as string,
+        stripeStatus: transactionData.stripeStatus as string,
+        amount: Number(transactionData.amount),
+        currency: transactionData.currency as string,
+        receiptURL: transactionData.receiptURL as string,
+        createdAt: transactionData.createdAt as Date
+      }
+    }
+  }
+
   const result: Order = {
     id: orderRs.orders.id,
     userID: orderRs.orders.userID as string,
@@ -241,6 +266,107 @@ export const getOrder = async (
     status: orderRs.orders.status as string,
     orderItems: orderItemsObj as OrderItems[],
     total: Number(orderRs.orders.total),
+    transaction: transaction,
+    createdAt: orderRs.orders.createdAt,
+    updatedAt: orderRs.orders.updatedAt
+  }
+
+  return result
+}
+
+export const getOrderByAdmin = async (
+  orderID: string
+): Promise<Order | string> => {
+  const db = getDbClient()
+  const orderRs = await db
+    .select()
+    .from(tblOrders)
+    .leftJoin(tblUsers, eq(tblUsers.id, tblOrders.userID))
+    .where(eq(tblOrders.id, orderID))
+    .limit(1)
+    .then((rows) => rows[0])
+
+  if (!orderRs) throw new Error('no order found!!!')
+
+  const shipMethodRs = await db
+    .select()
+    .from(tblShipMethod)
+    .where(eq(tblShipMethod.id, orderRs.orders.shipMethodID as number))
+    .limit(1)
+    .then((rows) => rows[0])
+
+  const selectedShipMethod: ShipMethod = {
+    id: shipMethodRs.id,
+    method: shipMethodRs.method as string,
+    detail: shipMethodRs.detail as string,
+    price: Number(shipMethodRs.price)
+  }
+
+  const addressRs = await db
+    .select({
+      id: tblAddresses.id,
+      fullname: tblAddresses.fullname,
+      phoneNumber: tblAddresses.phoneNumber,
+      district: tblAddresses.district,
+      address: tblAddresses.address,
+      city: tblAddresses.city,
+      country: tblAddresses.country
+    })
+    .from(tblAddresses)
+    .where(eq(tblAddresses.id, orderRs.orders.addressID as number))
+    .limit(1)
+    .then((rows) => rows[0])
+
+  const orderItemsRs = await db
+    .select({
+      id: tblOrderItems.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      quantity: tblOrderItems.quantity,
+      price: tblOrderItems.price
+    })
+    .from(tblOrderItems)
+    .leftJoin(tblProducts, eq(tblProducts.id, tblOrderItems.productID))
+    .where(eq(tblOrderItems.orderID, orderRs.orders.id as string))
+
+  const orderItemsObj = orderItemsRs.map((item) => ({
+    ...item,
+    price: Number(item.price)
+  }))
+
+  let transaction: Transaction | undefined = undefined
+
+  if (orderRs.orders.status === 'complete') {
+    const transactionData = await db
+      .select()
+      .from(tblTransactions)
+      .where(eq(tblTransactions.orderID, orderRs.orders.id))
+      .limit(1)
+      .then((rows) => rows[0])
+    if (transactionData) {
+      transaction = {
+        id: transactionData.id,
+        orderID: transactionData.orderID as string,
+        userID: transactionData.userID as string,
+        stripePaymentIntentID: transactionData.stripePaymentIntentID as string,
+        stripeStatus: transactionData.stripeStatus as string,
+        amount: Number(transactionData.amount),
+        currency: transactionData.currency as string,
+        receiptURL: transactionData.receiptURL as string,
+        createdAt: transactionData.createdAt as Date
+      }
+    }
+  }
+
+  const result: Order = {
+    id: orderRs.orders.id,
+    userID: orderRs.orders.userID as string,
+    address: addressRs as Address,
+    shipMethod: selectedShipMethod,
+    status: orderRs.orders.status as string,
+    orderItems: orderItemsObj as OrderItems[],
+    total: Number(orderRs.orders.total),
+    transaction: transaction,
     createdAt: orderRs.orders.createdAt,
     updatedAt: orderRs.orders.updatedAt
   }
@@ -556,4 +682,156 @@ export const getTopSellingProducts = async () => {
     `
   )
   return result.rows
+}
+
+export const getAllOrdersForAdmin = async (
+  page: number,
+  pageSize: number
+): Promise<{
+  data: any[]
+  meta: { page: number; page_limit: number; total_pages: number; total: number }
+}> => {
+  const db = getDbClient()
+
+  // Step 1: Get the total count of orders to calculate total pages
+  const totalOrders = await db
+    .select()
+    .from(tblOrders)
+    .then((rows) => rows.length) // Get total number of orders
+
+  const totalPages = Math.ceil(totalOrders / pageSize) // Calculate total pages
+
+  // Step 2: Fetch the orders for the current page
+  const orders = await db
+    .select()
+    .from(tblOrders)
+    .limit(pageSize) // Limit the number of orders per page
+    .offset((page - 1) * pageSize) // Offset to get the correct page
+    .then((rows) => rows)
+
+  const results = []
+
+  // Step 3: Fetch related data for each order
+  for (const order of orders) {
+    // Fetch shipping method details
+    const shippingMethod = await db
+      .select()
+      .from(tblShipMethod)
+      .where(eq(tblShipMethod.id, order.shipMethodID as number))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    const selectedShipMethod: ShipMethod = {
+      id: shippingMethod.id,
+      method: shippingMethod.method as string,
+      detail: shippingMethod.detail as string,
+      price: Number(shippingMethod.price)
+    }
+
+    // Fetch address details
+    const address = await db
+      .select({
+        id: tblAddresses.id,
+        fullname: tblAddresses.fullname,
+        address: tblAddresses.address,
+        district: tblAddresses.district,
+        city: tblAddresses.city,
+        country: tblAddresses.country,
+        phoneNumber: tblAddresses.phoneNumber
+      })
+      .from(tblAddresses)
+      .where(eq(tblAddresses.id, order.addressID as number))
+      .limit(1)
+      .then((rows) => rows[0])
+
+    if (!address) {
+      throw new Error(`Address not found for order ID: ${order.id}`)
+    }
+
+    const addressObj: Address = {
+      id: address.id,
+      fullname: address.fullname as string,
+      address: address.address as string,
+      district: address.district as string,
+      city: address.city as string,
+      country: address.country as string,
+      phoneNumber: address.phoneNumber as string
+    }
+
+    // Fetch order items
+    const orderItems = await db
+      .select({
+        id: tblOrderItems.id,
+        productID: tblOrderItems.productID,
+        name: tblProducts.name,
+        image: tblProducts.image,
+        quantity: tblOrderItems.quantity,
+        price: tblOrderItems.price
+      })
+      .from(tblOrderItems)
+      .leftJoin(tblProducts, eq(tblProducts.id, tblOrderItems.productID))
+      .where(eq(tblOrderItems.orderID, order.id as string))
+      .then((rows) =>
+        rows.map((item) => ({
+          ...item,
+          price: Number(item.price)
+        }))
+      )
+
+    let transaction: Transaction | undefined = undefined
+
+    // If the order status is "success", fetch the transaction
+    if (order.status === 'complete') {
+      const transactionData = await db
+        .select()
+        .from(tblTransactions)
+        .where(eq(tblTransactions.orderID, order.id))
+        .limit(1)
+        .then((rows) => rows[0])
+
+      if (transactionData) {
+        transaction = {
+          id: transactionData.id,
+          orderID: transactionData.orderID as string,
+          userID: transactionData.userID as string,
+          stripePaymentIntentID:
+            transactionData.stripePaymentIntentID as string,
+          stripeStatus: transactionData.stripeStatus as string,
+          amount: Number(transactionData.amount),
+          currency: transactionData.currency as string,
+          receiptURL: transactionData.receiptURL as string,
+          createdAt: transactionData.createdAt as Date
+        }
+      }
+    }
+
+    const user = await findUserByID(order.userID as string)
+
+    // Assemble the order object
+    const orderDetail = {
+      id: order.id,
+      user: user,
+      address: addressObj,
+      status: order.status as string,
+      shipMethod: selectedShipMethod,
+      orderItems: orderItems as OrderItems[],
+      total: Number(order.total),
+      transaction: transaction, // Include transaction if available
+      createdAt: order.createdAt,
+      updatedAt: order.updatedAt
+    }
+
+    results.push(orderDetail)
+  }
+
+  // Step 4: Return the data with pagination metadata
+  return {
+    data: results,
+    meta: {
+      page: page,
+      page_limit: pageSize,
+      total_pages: totalPages,
+      total: totalOrders
+    }
+  }
 }

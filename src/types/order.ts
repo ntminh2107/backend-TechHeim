@@ -2,6 +2,7 @@ import { Address } from './user'
 
 export type OrderItems = {
   name: string
+  productID?: number
   image: string
   quantity: number
   price: number

@@ -11,11 +11,15 @@ import { Brand, Category, Comments, PriceTag, Product } from '@/types/product'
 import {
   SQL,
   and,
+  asc,
   between,
+  count,
+  desc,
   eq,
   gte,
   inArray,
   isNotNull,
+  like,
   lte,
   or,
   sql
@@ -531,89 +535,78 @@ export const selectProductComments = async (
 }
 
 export const getAllProduct = async (
-  limit?: number,
-  offset?: number
-): Promise<Product[] | string> => {
-  const db = getDbClient()
-  let query
-
-  if (limit || offset) {
-    query = db
-      .select({
-        id: tblProducts.id,
-        name: tblProducts.name,
-        image: tblProducts.image,
-        color: tblProducts.color,
-        rating: tblProducts.rating,
-        category: tblCategories.categoryName,
-        brand: tblBrands.brandName,
-        priceTagID: tblProductPriceTags.id,
-        price: tblProductPriceTags.price,
-        percent: tblProductPriceTags.percent
-      })
-      .from(tblProducts)
-      .leftJoin(
-        tblProductPriceTags,
-        eq(tblProductPriceTags.productID, tblProducts.id)
-      )
-      .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
-      .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
-      .leftJoin(
-        tblSpecifications,
-        eq(tblSpecifications.productID, tblProducts.id)
-      )
-      .groupBy(
-        tblProducts.id,
-        tblProducts.name,
-        tblProducts.image,
-        tblProducts.color,
-        tblProducts.rating,
-        tblCategories.categoryName,
-        tblBrands.brandName,
-        tblProductPriceTags.price,
-        tblProductPriceTags.id
-      )
-      .limit(limit as number)
-      .offset(offset as number)
-  } else {
-    query = db
-      .select({
-        id: tblProducts.id,
-        name: tblProducts.name,
-        image: tblProducts.image,
-        color: tblProducts.color,
-        rating: tblProducts.rating,
-        category: tblCategories.categoryName,
-        brand: tblBrands.brandName,
-        priceTagID: tblProductPriceTags.id,
-        price: tblProductPriceTags.price,
-        percent: tblProductPriceTags.percent
-      })
-      .from(tblProducts)
-      .leftJoin(
-        tblProductPriceTags,
-        eq(tblProductPriceTags.productID, tblProducts.id)
-      )
-      .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
-      .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
-      .leftJoin(
-        tblSpecifications,
-        eq(tblSpecifications.productID, tblProducts.id)
-      )
-      .groupBy(
-        tblProducts.id,
-        tblProducts.name,
-        tblProducts.image,
-        tblProducts.color,
-        tblProducts.rating,
-        tblCategories.categoryName,
-        tblBrands.brandName,
-        tblProductPriceTags.price,
-        tblProductPriceTags.id
-      )
+  page: number,
+  pageSize: number,
+  sortOrder: 'asc' | 'desc' = 'asc', // Optional sortOrder, default is 'asc'
+  searchQuery?: string // Optional search query to filter by product name
+): Promise<{
+  data: Product[]
+  metadata: {
+    page: number
+    page_limit: number
+    total_pages: number
+    total: number
   }
+}> => {
+  const db = getDbClient()
 
-  // Execute the query
+  // Build the initial query with pagination
+  let query = db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName,
+      priceTagID: tblProductPriceTags.id,
+      price: tblProductPriceTags.price,
+      percent: tblProductPriceTags.percent
+    })
+    .from(tblProducts)
+    .leftJoin(
+      tblProductPriceTags,
+      eq(tblProductPriceTags.productID, tblProducts.id)
+    )
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(
+      tblSpecifications,
+      eq(tblSpecifications.productID, tblProducts.id)
+    )
+    .groupBy(
+      tblProducts.id,
+      tblProducts.name,
+      tblProducts.image,
+      tblProducts.color,
+      tblProducts.rating,
+      tblCategories.categoryName,
+      tblBrands.brandName,
+      tblProductPriceTags.price,
+      tblProductPriceTags.id
+    )
+    .limit(pageSize)
+    .offset((page - 1) * pageSize) // Apply pagination (page starts at 1)
+
+  // If a searchQuery is provided, filter by product name (case-insensitive)
+
+  // Apply sorting by price based on the sortOrder parameter
+  if (sortOrder === 'asc') {
+    query.orderBy(asc(tblProductPriceTags.price)) // Ascending order
+  } else {
+    query.orderBy(desc(tblProductPriceTags.price)) // Descending order
+  }
+  if (searchQuery) {
+    query.where(like(tblProducts.name, `%${searchQuery}%`))
+  }
+  // Query to get the total count of products for pagination metadata
+  const totalCountQuery = db
+    .select({ count: count() })
+    .from(tblProducts)
+    .where(like(tblProducts.name, `%${searchQuery}%`)) // Filter total count by search query
+
+  // Execute the queries
   const result: Product[] = (await query).map((product) => ({
     id: product.id,
     name: product.name,
@@ -630,7 +623,25 @@ export const getAllProduct = async (
     }
   }))
 
-  return result
+  const totalCountResult = await totalCountQuery
+  const total = totalCountResult[0]?.count ?? 0 // Get the total product count
+
+  // Calculate the total number of pages
+  const totalPages = Math.ceil(total / pageSize)
+
+  // Create pagination metadata
+  const metadata = {
+    page: page, // Current page (1-indexed)
+    page_limit: pageSize, // Limit per page
+    total_pages: totalPages, // Total pages
+    total // Total number of products
+  }
+
+  // Return the result and metadata
+  return {
+    data: result,
+    metadata
+  }
 }
 
 export const searchProductsByName = async (

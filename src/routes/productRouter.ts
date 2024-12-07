@@ -5,10 +5,10 @@ import {
   createCategory,
   editProductController,
   filteredProduct,
+  getAllProductController,
   getBrandsList,
   getCategoriesList,
   getProductDetail,
-  getProducts,
   getSaleProductsList,
   getSearchProducts,
   listFilteredByBrand,
@@ -28,7 +28,7 @@ const getProductRouter = () => {
   const router = Router()
 
   /* list of product by category or brand */
-  router.get('', wrap(getProducts))
+  router.get('', wrap(getAllProductController))
   router.get('/search-product', wrap(getSearchProducts))
   router.post('/add-image', wrap(addImagePreview))
   router.get('/sale', wrap(getSaleProductsList))

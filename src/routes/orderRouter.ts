@@ -2,6 +2,7 @@ import {
   addAnOrder,
   addShipMethod,
   getAllOrdersController,
+  getAllOrdersForAdminController,
   getAnOrderDetail,
   getBestSellers,
   getInvoice,
@@ -30,6 +31,8 @@ const getOrderRouter = () => {
   router.post('/transaction/add', wrap(saveTransactionController))
 
   router.get('/all', wrap(getAllOrdersController))
+  router.get('/admin/all', wrap(getAllOrdersForAdminController))
+  router.get('/admin/detail/:orderID', wrap(getAllOrdersForAdminController))
   router.get('/bill/:orderID', wrap(getAnOrderDetail))
 
   return router
