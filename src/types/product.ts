@@ -43,7 +43,7 @@ export type PriceTag = {
 export type Comments = {
   id: number
   productID: number
-  userID: string
+  email: string
   content: string
   date: Date
   rating: number

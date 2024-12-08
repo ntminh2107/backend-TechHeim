@@ -1,4 +1,5 @@
 import {
+  addCommentToProduct,
   addImagePreview,
   addProduct,
   createBrand,
@@ -8,6 +9,7 @@ import {
   getAllProductController,
   getBrandsList,
   getCategoriesList,
+  getProductComments,
   getProductDetail,
   getSaleProductsList,
   getSearchProducts,
@@ -42,7 +44,7 @@ const getProductRouter = () => {
   /* product detail */
   router.get('/detail/:id', wrap(getProductDetail))
   router.put('/edit/:productID', wrap(editProductController)) // Add route for editing product
-
+  router.get('/comment/list/:productID', wrap(getProductComments))
   /*use authen for specific function */
   router.use(authentication)
 
@@ -59,6 +61,7 @@ const getProductRouter = () => {
   router.post('/brand', wrap(createBrand)) // Create a new brand
   router.put('/brand/:id', wrap(updateBrand)) // Update an existing brand
   router.delete('/brand/:id', wrap(removeBrand)) // Delete a brand
+  router.post('/comment/add', wrap(addCommentToProduct))
 
   return router
 }

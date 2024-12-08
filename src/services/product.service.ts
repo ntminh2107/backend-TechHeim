@@ -7,6 +7,7 @@ import {
   tblProducts,
   tblSpecifications
 } from '@/models/product.schema'
+import { tblUsers } from '@/models/user.schema'
 import { Brand, Category, Comments, PriceTag, Product } from '@/types/product'
 import {
   SQL,
@@ -498,16 +499,44 @@ export const insertCommentOnProduct = async (
       })
       .returning()
 
+    const getUserEmail = await trx
+      .select({ email: tblUsers.email })
+      .from(tblUsers)
+      .where(eq(tblUsers.id, userID))
+      .limit(1)
+      .then((rows) => rows[0])
+
     if (!insertCmt)
       throw new Error('somthing wrong happens went trying to insert to db')
     const rs: Comments = {
       id: insertCmt[0].id,
       date: insertCmt[0].date as Date,
-      userID: insertCmt[0].userID as string,
+      email: getUserEmail.email as string,
       productID: insertCmt[0].productID as number,
       content: insertCmt[0].content as string,
       rating: Number(insertCmt[0].rating)
     }
+
+    const ratings = await trx
+      .select({ rating: tblCommentProducts.rating })
+      .from(tblCommentProducts)
+      .where(eq(tblCommentProducts.productID, productID))
+
+    if (ratings.length === 0) {
+      throw new Error('No ratings found for the product')
+    }
+
+    // Calculate average rating
+    const averageRating =
+      ratings.reduce(
+        (sum, rs) => sum + parseFloat(rs.rating?.toString() as string),
+        0
+      ) / ratings.length
+
+    await trx
+      .update(tblProducts)
+      .set({ rating: averageRating.toString() })
+      .where(eq(tblProducts.id, productID))
 
     return rs
   })
@@ -519,17 +548,18 @@ export const selectProductComments = async (
   const db = getDbClient()
 
   const query = await db
-    .select()
+    .select({ tblCommentProducts, email: tblUsers.email })
     .from(tblCommentProducts)
+    .innerJoin(tblUsers, eq(tblUsers.id, tblCommentProducts.userID))
     .where(eq(tblCommentProducts.productID, productID))
 
   const rs: Comments[] = query.map((cmt) => ({
-    id: cmt.id,
-    date: cmt.date as Date,
-    userID: cmt.userID as string,
-    productID: cmt.productID as number,
-    content: cmt.content as string,
-    rating: Number(cmt.rating)
+    id: cmt.tblCommentProducts.id,
+    date: cmt.tblCommentProducts.date as Date,
+    email: cmt.email as string,
+    productID: cmt.tblCommentProducts.productID as number,
+    content: cmt.tblCommentProducts.content as string,
+    rating: Number(cmt.tblCommentProducts.rating)
   }))
   return rs
 }
