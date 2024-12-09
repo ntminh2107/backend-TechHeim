@@ -156,7 +156,7 @@ const getAllProductController = async (req: Request, res: Response) => {
       (req.query.sortOrder as 'asc' | 'desc') || 'asc'
 
     // Extract search query for filtering by product name, optional
-    const searchQuery = req.query.search as string | undefined
+    const searchQuery = req.query.search as string
 
     // Call the getAllProduct service function with search query
     const data = await getAllProduct(
