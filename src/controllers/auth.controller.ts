@@ -13,6 +13,7 @@ import {
   getAllAddressesByUserID,
   insertAddress
 } from '@/services/user.service'
+import { calculateRevenueEachMonth } from '@/services/order.service'
 
 const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, phoneNumber } = req.body
@@ -152,7 +153,10 @@ const deleteSelectedAddress = async (req: Request, res: Response) => {
   }
 }
 
-// const logout = async (req: Request, res: Response) => {}
+const revenueDisplay = async (_req: Request, res: Response) => {
+  const data = await calculateRevenueEachMonth()
+  return res.status(HttpStatusCode.OK).json(data)
+}
 
 export {
   registerUser,
@@ -160,5 +164,6 @@ export {
   getUser,
   addAddress,
   getAllAddresses,
-  deleteSelectedAddress
+  deleteSelectedAddress,
+  revenueDisplay
 }

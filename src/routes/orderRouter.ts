@@ -1,3 +1,4 @@
+import { revenueDisplay } from '@/controllers/auth.controller'
 import {
   addAnOrder,
   addShipMethod,
@@ -20,6 +21,7 @@ const getOrderRouter = () => {
   router.get('/best-sellers', wrap(getBestSellers))
 
   router.get('/invoice/:orderId', wrap(getInvoice))
+  router.get('/revenue', wrap(revenueDisplay))
 
   router.use(authentication)
 

@@ -835,3 +835,60 @@ export const getAllOrdersForAdmin = async (
     }
   }
 }
+
+export const calculateRevenueEachMonth = async () => {
+  const db = await getDbClient()
+
+  const orderRs = await db
+    .select({
+      createdAt: tblOrders.createdAt,
+      total: tblOrders.total
+    })
+    .from(tblOrders)
+
+  // Step 1: Calculate monthly revenue
+  const monthlyRevenue = orderRs.reduce(
+    (acc, order) => {
+      const date = new Date(order.createdAt)
+      const monthYearKey = `${date.getFullYear()}-${date.getMonth() + 1}` // "YYYY-MM"
+
+      if (!acc[monthYearKey]) {
+        acc[monthYearKey] = 0
+      }
+
+      acc[monthYearKey] += parseFloat(order.total as string)
+
+      return acc
+    },
+    {} as Record<string, number>
+  )
+
+  // Step 2: Initialize an array with all months
+  const allMonths = [
+    { month: 'January', key: '01' },
+    { month: 'February', key: '02' },
+    { month: 'March', key: '03' },
+    { month: 'April', key: '04' },
+    { month: 'May', key: '05' },
+    { month: 'June', key: '06' },
+    { month: 'July', key: '07' },
+    { month: 'August', key: '08' },
+    { month: 'September', key: '09' },
+    { month: 'October', key: '10' },
+    { month: 'November', key: '11' },
+    { month: 'December', key: '12' }
+  ]
+
+  // Step 3: Merge the calculated revenue with all months
+  const result = allMonths.map(({ month, key }) => {
+    const monthYearKey = `${new Date().getFullYear()}-${key}` // For current year, use 'YYYY-MM'
+    const totalRevenue = monthlyRevenue[monthYearKey] || 0 // Default to 0 if no revenue for this month
+
+    return {
+      month, // Full month name (e.g., "January")
+      totalRevenue: Number(totalRevenue.toFixed(2)) // Ensure two decimal places
+    }
+  })
+
+  return result
+}
