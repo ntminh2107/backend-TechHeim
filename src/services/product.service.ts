@@ -492,6 +492,7 @@ export const filteredbycategoryPagination = async (
 
   const page = Number(queryParams.page) || 1
   const pageSize = Number(queryParams.limit) || 10
+  console.log('page: ', page, 'pageSize: ', pageSize)
   const offset = (page - 1) * pageSize
 
   const queryResult = await db

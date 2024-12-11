@@ -114,7 +114,6 @@ const filteredProduct = async (req: Request, res: Response) => {
 
 const filteredProductPagination = async (req: Request, res: Response) => {
   const category = req.params.category
-
   const queryParams = req.query as { [key: string]: string }
 
   if (!category)
