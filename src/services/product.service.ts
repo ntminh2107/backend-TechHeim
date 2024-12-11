@@ -440,6 +440,145 @@ export const filteredbycategory = async (
   return result
 }
 
+export const filteredbycategoryPagination = async (
+  category: string,
+  queryParams: { [key: string]: string }
+): Promise<{
+  meta: {
+    page: number
+    page_size: number
+    total_pages: number
+    total: number
+  }
+  data: Product[]
+}> => {
+  const db = getDbClient()
+  const min = queryParams.min
+  const max = queryParams.max
+  const discount = queryParams.discount === 'true'
+  const specFilters = { ...queryParams }
+
+  delete specFilters.min
+  delete specFilters.max
+  delete specFilters.page
+  delete specFilters.limit
+  delete specFilters.discount
+  const baseCondition = [
+    sql`LOWER(${tblCategories.categoryName}) = LOWER (${category})`
+  ]
+
+  if (Object.keys(specFilters).length > 0) {
+    const specConditions = Object.entries(specFilters).map(([key, value]) => {
+      const values = value.split(',').map((val) => val.trim())
+      return and(
+        eq(tblSpecifications.key, key),
+        inArray(tblSpecifications.value, values)
+      )
+    })
+    baseCondition.push(or(...specConditions) as SQL<unknown>)
+  }
+
+  if (min !== undefined && max !== undefined) {
+    baseCondition.push(between(tblProductPriceTags.price, min, max))
+  } else if (min !== undefined) {
+    baseCondition.push(gte(tblProductPriceTags.price, min))
+  } else if (max !== undefined) {
+    baseCondition.push(lte(tblProductPriceTags.price, max))
+  }
+
+  if (discount) {
+    baseCondition.push(isNotNull(tblProductPriceTags.percent))
+  }
+
+  const page = Number(queryParams.page) || 1
+  const pageSize = Number(queryParams.limit) || 10
+  const offset = (page - 1) * pageSize
+
+  const queryResult = await db
+    .select({
+      id: tblProducts.id,
+      name: tblProducts.name,
+      image: tblProducts.image,
+      color: tblProducts.color,
+      rating: tblProducts.rating,
+      category: tblCategories.categoryName,
+      brand: tblBrands.brandName,
+      priceTagID: tblProductPriceTags.id,
+      price: tblProductPriceTags.price,
+      percent: tblProductPriceTags.percent
+    })
+    .from(tblProducts)
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .leftJoin(
+      tblProductPriceTags,
+      eq(tblProductPriceTags.productID, tblProducts.id)
+    )
+    .leftJoin(
+      tblSpecifications,
+      eq(tblSpecifications.productID, tblProducts.id)
+    )
+    .where(and(...baseCondition))
+    .limit(pageSize)
+    .offset(offset)
+    .groupBy(
+      tblProducts.id,
+      tblProducts.name,
+      tblProducts.image,
+      tblProducts.color,
+      tblProducts.rating,
+      tblCategories.categoryName,
+      tblBrands.brandName,
+      tblProductPriceTags.price,
+      tblProductPriceTags.id
+    )
+
+  const result: Product[] = (await queryResult).map((product) => ({
+    id: product.id,
+    name: product.name,
+    image: product.image as string,
+    color: product.color as string,
+    rating: Number(product.rating),
+    category: product.category as string,
+    brand: product.brand as string,
+    price: {
+      id: product.priceTagID as number,
+      productID: product.id,
+      price: Number(product.price),
+      percent: product.percent as number
+    }
+  }))
+
+  const totalProducts = await db
+    .select({ count: count(tblProducts.id) })
+    .from(tblProducts)
+    .leftJoin(tblCategories, eq(tblProducts.categoryID, tblCategories.id))
+    .leftJoin(tblBrands, eq(tblProducts.brandID, tblBrands.id))
+    .leftJoin(
+      tblProductPriceTags,
+      eq(tblProductPriceTags.productID, tblProducts.id)
+    )
+    .leftJoin(
+      tblSpecifications,
+      eq(tblSpecifications.productID, tblProducts.id)
+    )
+    .where(and(...baseCondition))
+    .then((row) => row[0])
+
+  const total = totalProducts.count
+  const totalPages = Math.ceil(total / pageSize)
+
+  return {
+    meta: {
+      page, // Current page
+      page_size: pageSize, // Number of items per page
+      total_pages: totalPages, // Total number of pages
+      total // Total number of matching products
+    },
+    data: result // The filtered products
+  }
+}
+
 export const filteredFieldOptions = async (
   category: string
 ): Promise<{ key: string; value: string[] }[]> => {

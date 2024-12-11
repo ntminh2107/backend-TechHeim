@@ -19,7 +19,8 @@ import {
   addBrand,
   editBrand,
   deleteBrand,
-  editProduct
+  editProduct,
+  filteredbycategoryPagination
 } from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
@@ -107,6 +108,22 @@ const filteredProduct = async (req: Request, res: Response) => {
     )
 
   const data = await filteredbycategory(category, queryParams)
+
+  res.status(HttpStatusCode.ACCEPTED).json(data)
+}
+
+const filteredProductPagination = async (req: Request, res: Response) => {
+  const category = req.params.category
+
+  const queryParams = req.query as { [key: string]: string }
+
+  if (!category)
+    throw new HttpError(
+      'Page you looking for is not found',
+      HttpStatusCode.NOT_FOUND
+    )
+
+  const data = await filteredbycategoryPagination(category, queryParams)
 
   res.status(HttpStatusCode.ACCEPTED).json(data)
 }
@@ -347,5 +364,6 @@ export {
   getAllProductController,
   updateBrand,
   removeBrand,
-  editProductController
+  editProductController,
+  filteredProductPagination
 }

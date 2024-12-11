@@ -109,11 +109,7 @@ const getAllAddresses = async (req: Request, res: Response) => {
 
   try {
     const addresses = await getAllAddressesByUserID(userID)
-    if (addresses.length === 0) {
-      return res
-        .status(HttpStatusCode.NOT_FOUND)
-        .json({ message: 'No addresses found for this user' })
-    }
+
     return res.status(HttpStatusCode.OK).json(addresses)
   } catch (error) {
     throw new HttpError(

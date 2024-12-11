@@ -6,10 +6,7 @@ import { Cart, CartItems } from '@/types/cart'
 import { and, eq } from 'drizzle-orm'
 
 /*TODO: revert all services into a transaction */
-export const addToCart = async (
-  productID: number,
-  userID: string
-): Promise<string> => {
+export const addToCart = async (productID: number, userID: string) => {
   const db = getDbClient()
   const checkCart = await db
     .select()
@@ -78,7 +75,7 @@ export const addToCart = async (
   })
 }
 
-export const getCartUser = async (userID: string): Promise<Cart | string> => {
+export const getCartUser = async (userID: string) => {
   const db = getDbClient()
   let cart
   const cartRs = await db
@@ -135,7 +132,7 @@ export const updateQuantity = async (
   userID: string,
   cartItemID: number,
   quantity: number
-): Promise<Cart | string> => {
+) => {
   const db = getDbClient()
   const checkCart = await db
     .select({
@@ -168,10 +165,7 @@ export const updateQuantity = async (
   })
 }
 
-export const deleteItem = async (
-  userID: string,
-  cartID: number
-): Promise<string> => {
+export const deleteItem = async (userID: string, cartID: number) => {
   const db = getDbClient()
 
   const checkCart = await db

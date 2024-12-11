@@ -17,7 +17,7 @@ export const insertOrder = async (
   userID: string,
   addressID: number,
   shipMethodID: number
-): Promise<Order> => {
+) => {
   const db = getDbClient()
 
   // Check if the user has a cart
@@ -172,10 +172,7 @@ export const insertOrder = async (
   })
 }
 /*TODO: GET order + do transaction w/ noti */
-export const getOrder = async (
-  userID: string,
-  orderID: string
-): Promise<Order | string> => {
+export const getOrder = async (userID: string, orderID: string) => {
   console.log('userID: ', userID, 'orderID: ', orderID)
   const db = getDbClient()
   const orderRs = await db
@@ -274,9 +271,7 @@ export const getOrder = async (
   return result
 }
 
-export const getOrderByAdmin = async (
-  orderID: string
-): Promise<Order | string> => {
+export const getOrderByAdmin = async (orderID: string) => {
   const db = getDbClient()
   const orderRs = await db
     .select()
@@ -424,7 +419,7 @@ export const createShipMethod = async (
   method: string,
   detail: string,
   price: number
-): Promise<ShipMethod> => {
+) => {
   const db = getDbClient()
   const [newShipMethod] = await db
     .insert(tblShipMethod)
@@ -449,7 +444,7 @@ export const createShipMethod = async (
   return newShipMethodObj
 }
 
-export const getAllShipMethods = async (): Promise<ShipMethod[]> => {
+export const getAllShipMethods = async () => {
   const db = getDbClient()
 
   const rs = await db
@@ -473,7 +468,7 @@ export const saveTransaction = async (
   stripeStatus: string,
   amount: number,
   receiptURL: string
-): Promise<any> => {
+) => {
   const db = await getDbClient()
   try {
     const res = await db
@@ -500,9 +495,7 @@ export const saveTransaction = async (
   }
 }
 
-export const getTransactionByOrderID = async (
-  orderID: string
-): Promise<Transaction> => {
+export const getTransactionByOrderID = async (orderID: string) => {
   const db = getDbClient()
 
   try {
@@ -536,7 +529,7 @@ export const getTransactionByOrderID = async (
   }
 }
 
-export const getAllOrders = async (userID: string): Promise<Order[]> => {
+export const getAllOrders = async (userID: string) => {
   const db = getDbClient()
 
   // Fetch all orders for the user

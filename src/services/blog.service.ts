@@ -1,7 +1,7 @@
 import { getDbClient } from '@/database/connection'
 import { tblBlogs, tblTagBlogs, tblVideoBlogs } from '@/models/blog.schema'
 import { Blog, VideoBlog } from '@/types/blog'
-import { asc, eq, desc } from 'drizzle-orm'
+import { asc, eq, desc, count, sql } from 'drizzle-orm'
 
 export const insertBlog = async (
   title: string,
@@ -10,7 +10,7 @@ export const insertBlog = async (
   tags: string[],
   content: string,
   image: string
-): Promise<Blog | string> => {
+) => {
   const db = getDbClient()
   const insertBlog = await db
     .insert(tblBlogs)
@@ -63,7 +63,7 @@ export const editBlog = async (
     content?: string
     image?: string
   }
-): Promise<Blog | string> => {
+) => {
   const db = getDbClient()
 
   // Check if the blog exists
@@ -136,7 +136,7 @@ export const insertVideoBlog = async (
   title: string,
   url: string,
   image: string
-): Promise<VideoBlog | string> => {
+) => {
   const db = getDbClient()
   return await db.transaction(async (trx) => {
     const insertVideoBlog = await trx
@@ -164,13 +164,19 @@ export const getVideoBlogList = async (): Promise<VideoBlog[] | string> => {
 
 export const getBlogsList = async (
   sort: 'asc' | 'desc' = 'asc',
-  limit: number | 20
-): Promise<Blog[] | string> => {
+  pageLimit: number,
+  page: number,
+  search: string
+) => {
   const db = getDbClient()
 
-  const orderCondition = sort === 'asc' ? asc : desc
+  const offset = (page - 1) * pageLimit
 
-  const queryListBlog = await db
+  const lowerSearchQr = search.toLowerCase()
+
+  const condition = sql`LOWER(${tblBlogs.title}) LIKE LOWER(${`%${lowerSearchQr}%`})`
+
+  let queryListBlog = db
     .select({
       id: tblBlogs.id,
       title: tblBlogs.title,
@@ -181,30 +187,53 @@ export const getBlogsList = async (
       content: tblBlogs.content
     })
     .from(tblBlogs)
-    .orderBy(orderCondition(tblBlogs.releaseDate))
-    .limit(limit)
+  // .where(condition)
+  // .orderBy(orderCondition(tblBlogs.releaseDate))
+  // .limit(pageLimit)
+  // .offset(offset)
 
-  const queryTagBlog = await db
-    .select({ tag: tblTagBlogs.tag })
-    .from(tblTagBlogs)
-    .where(eq(tblTagBlogs.blogID, queryListBlog[0].id))
+  if (sort === 'asc') {
+    queryListBlog.orderBy(asc(tblBlogs.releaseDate))
+  } else {
+    queryListBlog.orderBy(desc(tblBlogs.releaseDate))
+  }
+  if (search.length > 0) {
+    queryListBlog.where(condition)
+  }
 
-  const result: Blog[] = queryListBlog.map((blog) => ({
+  await queryListBlog.limit(pageLimit).offset(offset)
+
+  const totalBlogs = await db
+    .select({ count: count(tblBlogs.id) })
+    .from(tblBlogs)
+    .where(condition)
+    .then((row) => row[0])
+
+  const total = totalBlogs.count
+  const totalPages = Math.ceil(total / pageLimit)
+
+  const result = (await queryListBlog).map((blog) => ({
     id: blog.id,
     title: blog.title,
     author: blog.author,
     readTime: blog.readTime,
     releaseDate: blog.releaseDate as Date,
-    tags: queryTagBlog
-      .map((tagRow) => tagRow.tag)
-      .filter((tag): tag is string => tag !== null),
     image: blog.image,
     content: blog.content
   }))
-  return result
+
+  return {
+    meta: {
+      page,
+      page_limit: pageLimit,
+      total_pages: totalPages,
+      total
+    },
+    data: result
+  }
 }
 
-export const getBlogDetail = async (blogID: number): Promise<Blog | string> => {
+export const getBlogDetail = async (blogID: number) => {
   const db = getDbClient()
   const [queryBlogPost] = await db
     .select({

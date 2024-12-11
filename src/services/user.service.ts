@@ -39,19 +39,13 @@ export const insertAddress = async (
   })
 }
 
-export const getAllAddressesByUserID = async (
-  userID: string
-): Promise<Address[]> => {
+export const getAllAddressesByUserID = async (userID: string) => {
   const db = getDbClient()
   const addresses = await db
     .select()
     .from(tblAddresses)
     .where(eq(tblAddresses.userID, userID))
     .then((rows) => rows)
-
-  if (addresses.length === 0)
-    throw new Error('No addresses found for this user')
-
   return addresses as Address[]
 }
 

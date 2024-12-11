@@ -44,10 +44,22 @@ const listVideoBlogPost = async (_req: Request, res: Response) => {
 }
 
 const listBlogPost = async (req: Request, res: Response) => {
-  const sort = req.params.sort === 'desc' ? 'desc' : 'asc'
-  const limit = req.params.limit
-  const data = await getBlogsList(sort, Number(limit))
+  const currentPage = parseInt(req.query.page as string, 10) || 1
+  const itemsPerPage = parseInt(req.query.pageSize as string, 10) || 4
 
+  // Extract sort order, default to 'asc'
+  const sortOrder: 'asc' | 'desc' =
+    (req.query.sortOrder as 'asc' | 'desc') || 'asc'
+  const searchQuery = req.query.search as string
+
+  const data = await getBlogsList(
+    sortOrder,
+    itemsPerPage,
+    currentPage,
+    searchQuery
+  )
+
+  // Return the response with the blog data and pagination meta
   res.status(HttpStatusCode.ACCEPTED).json(data)
 }
 
