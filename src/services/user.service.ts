@@ -1,7 +1,7 @@
 import { getDbClient } from '@/database/connection'
 import { tblAddresses, tblUsers } from '@/models/user.schema'
 import { Address } from '@/types/user'
-import { and, eq } from 'drizzle-orm'
+import { and, asc, count, desc, eq, sql } from 'drizzle-orm'
 
 export const insertAddress = async (
   userID: string,
@@ -65,4 +65,55 @@ export const deleteAnAddress = async (
   }
 
   return `Address with ID ${addressID} has been deleted successfully.`
+}
+
+export const getUserList = async (
+  sort: 'asc' | 'desc' = 'asc',
+  pageLimit: number,
+  page: number,
+  search: string
+) => {
+  const db = getDbClient()
+  const offset = (page - 1) * pageLimit
+
+  const lowerSearchQr = search.toLowerCase()
+  const condition = sql`LOWER(${tblUsers.fullName}) LIKE LOWER(${`%${lowerSearchQr}%`})`
+  let query = db
+    .select({
+      id: tblUsers.id,
+      fullName: tblUsers.fullName,
+      email: tblUsers.email,
+      phoneNumber: tblUsers.phoneNumber
+    })
+    .from(tblUsers)
+  if (sort === 'asc')
+    if (sort === 'asc') {
+      query.orderBy(asc(tblUsers.fullName))
+    } else {
+      query.orderBy(desc(tblUsers.fullName))
+    }
+  if (search.length > 0) {
+    query.where(condition)
+  }
+
+  await query.limit(pageLimit).offset(offset)
+
+  const totalUser = await db
+    .select({ count: count(tblUsers.id) })
+    .from(tblUsers)
+    .where(condition)
+    .then((row) => row[0])
+
+  const total = totalUser.count
+  const totalPages = Math.ceil(total / pageLimit)
+
+  return {
+    meta: {
+      page,
+      page_limit: pageLimit,
+      total_pages: totalPages,
+      total
+    },
+    data: query
+  }
 }
