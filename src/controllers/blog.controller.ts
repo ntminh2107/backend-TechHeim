@@ -1,8 +1,10 @@
 import { HttpError } from '@/libs/HttpError'
 import {
+  deleteBlogByID,
   editBlog,
   getBlogDetail,
   getBlogsList,
+  getBlogsListUser,
   getVideoBlogList,
   insertBlog,
   insertVideoBlog
@@ -117,11 +119,28 @@ const editBlogPost = async (req: Request, res: Response) => {
   }
 }
 
+const deleteBlogPostController = async (req: Request, res: Response) => {
+  const blogID = parseInt(req.params.id as string)
+
+  const data = await deleteBlogByID(blogID)
+  res.status(HttpStatusCode.OK).json(data)
+}
+
+const listBlogPostUserController = async (req: Request, res: Response) => {
+  const sort = req.params.sort === 'desc' ? 'desc' : 'asc'
+  const limit = req.params.limit
+  const data = await getBlogsListUser(sort, Number(limit))
+
+  res.status(HttpStatusCode.ACCEPTED).json(data)
+}
+
 export {
   addBlogPost,
   listBlogPost,
   BlogDetail,
   listVideoBlogPost,
   addVideoBlogPost,
-  editBlogPost
+  editBlogPost,
+  deleteBlogPostController,
+  listBlogPostUserController
 }

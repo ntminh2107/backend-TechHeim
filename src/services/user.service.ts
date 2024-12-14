@@ -107,6 +107,13 @@ export const getUserList = async (
   const total = totalUser.count
   const totalPages = Math.ceil(total / pageLimit)
 
+  const rs = (await query).map((user) => ({
+    id: user.id,
+    fullName: user.fullName,
+    phoneNumber: user.phoneNumber,
+    email: user.email
+  }))
+
   return {
     meta: {
       page,
@@ -114,6 +121,6 @@ export const getUserList = async (
       total_pages: totalPages,
       total
     },
-    data: query
+    data: rs
   }
 }

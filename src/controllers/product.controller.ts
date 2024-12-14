@@ -20,7 +20,8 @@ import {
   editBrand,
   deleteBrand,
   editProduct,
-  filteredbycategoryPagination
+  filteredbycategoryPagination,
+  deleteProduct
 } from '@/services/product.service'
 import HttpStatusCode from '@/utils/httpStatusCode'
 import { Request, Response } from 'express'
@@ -342,6 +343,13 @@ const editProductController = async (req: Request, res: Response) => {
   }
 }
 
+const deleteProductController = async (req: Request, res: Response) => {
+  const { productID } = req.params
+
+  const data = await deleteProduct(Number(productID))
+  return res.status(HttpStatusCode.OK).json(data)
+}
+
 export {
   addProduct,
   getProductDetail,
@@ -364,5 +372,6 @@ export {
   updateBrand,
   removeBrand,
   editProductController,
-  filteredProductPagination
+  filteredProductPagination,
+  deleteProductController
 }

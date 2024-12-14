@@ -3,6 +3,7 @@ import {
   addProduct,
   createBrand,
   createCategory,
+  deleteProductController,
   editProductController,
   filteredProduct,
   filteredProductPagination,
@@ -68,6 +69,12 @@ const getProductRouter = () => {
     authorize('admin'),
     wrap(editProductController)
   ) // Add route for editing product
+
+  router.delete(
+    '/delete/:productID',
+    authorize('admin'),
+    wrap(deleteProductController)
+  )
   router.post('/comment/add', authorize('admin'), wrap(addCommentToProduct))
 
   return router

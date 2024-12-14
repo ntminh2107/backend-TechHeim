@@ -268,3 +268,58 @@ export const getBlogDetail = async (blogID: number) => {
 
   return result
 }
+
+export const deleteBlogByID = async (blogID: number) => {
+  const db = getDbClient()
+
+  await db.delete(tblTagBlogs).where(eq(tblTagBlogs.blogID, blogID)).execute()
+  const rs = db.delete(tblBlogs).where(eq(tblBlogs.id, blogID)).execute()
+
+  if ((await rs).rowCount === 0) {
+    throw new Error('Blog not found')
+  }
+
+  return `Blog with ID ${blogID} deleted successfully`
+}
+
+export const getBlogsListUser = async (
+  sort: 'asc' | 'desc' = 'asc',
+  limit: number | 20
+): Promise<Blog[] | string> => {
+  const db = getDbClient()
+
+  const orderCondition = sort === 'asc' ? asc : desc
+
+  const queryListBlog = await db
+    .select({
+      id: tblBlogs.id,
+      title: tblBlogs.title,
+      author: tblBlogs.author,
+      readTime: tblBlogs.readTime,
+      releaseDate: tblBlogs.releaseDate,
+      image: tblBlogs.image,
+      content: tblBlogs.content
+    })
+    .from(tblBlogs)
+    .orderBy(orderCondition(tblBlogs.releaseDate))
+    .limit(limit)
+
+  const queryTagBlog = await db
+    .select({ tag: tblTagBlogs.tag })
+    .from(tblTagBlogs)
+    .where(eq(tblTagBlogs.blogID, queryListBlog[0].id))
+
+  const result: Blog[] = queryListBlog.map((blog) => ({
+    id: blog.id,
+    title: blog.title,
+    author: blog.author,
+    readTime: blog.readTime,
+    releaseDate: blog.releaseDate as Date,
+    tags: queryTagBlog
+      .map((tagRow) => tagRow.tag)
+      .filter((tag): tag is string => tag !== null),
+    image: blog.image,
+    content: blog.content
+  }))
+  return result
+}

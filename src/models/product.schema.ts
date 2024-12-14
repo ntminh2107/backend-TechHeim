@@ -8,6 +8,7 @@ import {
 } from 'drizzle-orm/pg-core'
 import { tblUsers } from './user.schema'
 import { uuid } from 'drizzle-orm/pg-core'
+import { boolean } from 'drizzle-orm/pg-core'
 
 export const tblCategories = pgTable('categories', {
   id: serial('id').primaryKey().unique(),
@@ -30,7 +31,8 @@ export const tblProducts = pgTable('products', {
     .references(() => tblCategories.id)
     .notNull(),
   brandID: serial('brandID').references(() => tblBrands.id),
-  imageReview: varchar('imagePreview', { length: 255 }).array()
+  imageReview: varchar('imagePreview', { length: 255 }).array(),
+  isDeleted: boolean('isDeleted').default(false)
 })
 
 export const tblSpecifications = pgTable('specifications', {

@@ -3,6 +3,8 @@ import {
   deleteSelectedAddress,
   getAllAddresses,
   getUser,
+  getUserDetailController,
+  getUserListController,
   login,
   registerUser
 } from '@/controllers/auth.controller'
@@ -43,6 +45,12 @@ const getAuthRouter = () => {
     })
   )
 
+  router.get('/list', authorize('admin'), wrap(getUserListController))
+  router.get(
+    '/detail/:userID',
+    authorize('admin'),
+    wrap(getUserDetailController)
+  )
   router.post('/address/add', wrap(addAddress))
   router.get('/address/me', wrap(getAllAddresses))
   router.delete('/address/delete/:addressID', wrap(deleteSelectedAddress))

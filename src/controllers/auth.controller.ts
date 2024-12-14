@@ -11,9 +11,14 @@ import { HttpError } from '@/libs/HttpError'
 import {
   deleteAnAddress,
   getAllAddressesByUserID,
+  getUserList,
   insertAddress
 } from '@/services/user.service'
-import { calculateRevenueEachMonth } from '@/services/order.service'
+import {
+  calculateRevenueEachMonth,
+  getAllOrders,
+  getTransactionByOrderID
+} from '@/services/order.service'
 
 const registerUser = async (req: Request, res: Response) => {
   const { fullName, email, password, phoneNumber } = req.body
@@ -154,6 +159,51 @@ const revenueDisplay = async (_req: Request, res: Response) => {
   return res.status(HttpStatusCode.OK).json(data)
 }
 
+const getUserListController = async (req: Request, res: Response) => {
+  const currentPage = parseInt(req.query.page as string, 10) || 1
+  const itemsPerPage = parseInt(req.query.pageSize as string, 10) || 4
+
+  // Extract sort order, default to 'asc'
+  const sortOrder: 'asc' | 'desc' =
+    (req.query.sortOrder as 'asc' | 'desc') || 'asc'
+  const searchQuery = req.query.search as string
+  const data = await getUserList(
+    sortOrder,
+    itemsPerPage,
+    currentPage,
+    searchQuery
+  )
+
+  return res.status(HttpStatusCode.OK).json(data)
+}
+
+const getUserDetailController = async (req: Request, res: Response) => {
+  const { userID } = req.params
+
+  const userDetail = await findUserByID(userID)
+
+  const userOrderList = await getAllOrders(userID)
+
+  const processedOrders = await Promise.all(
+    userOrderList.map(async (order) => {
+      if (order.status === 'complete') {
+        // Fetch transaction details for successful orders
+        const transaction = await getTransactionByOrderID(order.id)
+        return {
+          ...order,
+          transaction
+        }
+      }
+      // For non-successful orders, return only the order details
+      return order
+    })
+  )
+
+  return res
+    .status(HttpStatusCode.OK)
+    .json({ detail: userDetail, order: processedOrders })
+}
+
 export {
   registerUser,
   login,
@@ -161,5 +211,7 @@ export {
   addAddress,
   getAllAddresses,
   deleteSelectedAddress,
-  revenueDisplay
+  revenueDisplay,
+  getUserListController,
+  getUserDetailController
 }

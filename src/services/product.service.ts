@@ -356,7 +356,10 @@ export const filteredbycategory = async (
   delete specFilters.limit
   delete specFilters.discount
   const baseCondition = [
-    sql`LOWER(${tblCategories.categoryName}) = LOWER (${category})`
+    and(
+      sql`LOWER(${tblCategories.categoryName}) = LOWER (${category})`,
+      eq(tblProducts.isDeleted, false)
+    )
   ]
 
   if (Object.keys(specFilters).length > 0) {
@@ -464,7 +467,8 @@ export const filteredbycategoryPagination = async (
   delete specFilters.limit
   delete specFilters.discount
   const baseCondition = [
-    sql`LOWER(${tblCategories.categoryName}) = LOWER (${category})`
+    sql`LOWER(${tblCategories.categoryName}) = LOWER (${category})`,
+    eq(tblProducts.isDeleted, false)
   ]
 
   if (Object.keys(specFilters).length > 0) {
@@ -721,9 +725,17 @@ export const getAllProduct = async (
 
   const lowerSearchQr = searchQuery.toLowerCase()
 
+  // Build the search condition based on the query
   const condition = sql`LOWER(${tblProducts.name}) LIKE LOWER(${`%${lowerSearchQr}%`}) OR
     LOWER(${tblCategories.categoryName}) LIKE LOWER(${`%${lowerSearchQr}%`}) OR
     LOWER(${tblBrands.brandName}) LIKE LOWER(${`%${lowerSearchQr}%`})`
+
+  // Add the condition to exclude deleted products
+  const baseCondition = and(
+    condition,
+    eq(tblProducts.isDeleted, false) // Exclude deleted products
+  )
+
   // Build the initial query with pagination
   let query = db
     .select({
@@ -761,22 +773,27 @@ export const getAllProduct = async (
       tblProductPriceTags.price,
       tblProductPriceTags.id
     )
+    .where(baseCondition) // Apply the condition to exclude deleted products
 
+  // Sort the products based on the sortOrder
   if (sortOrder === 'asc') {
     query.orderBy(asc(tblProductPriceTags.price)) // Ascending order
   } else {
     query.orderBy(desc(tblProductPriceTags.price)) // Descending order
   }
-  if (searchQuery.length > 0) {
-    query.where(condition)
-  }
 
-  const totalPages = Math.ceil((await query).length / pageSize)
-  const total = (await query).length
-
+  // Apply pagination limit and offset
   query.limit(pageSize).offset((page - 1) * pageSize)
 
-  // Execute the queries
+  const total = await db
+    .select({ count: count(tblProducts.id) })
+    .from(tblProducts)
+    .where(eq(tblProducts.isDeleted, false))
+    .then((row) => row[0])
+
+  const totalPages = Math.ceil(total.count / pageSize)
+
+  // Execute the queries to get the products
   const result: Product[] = (await query).map((product) => ({
     id: product.id,
     name: product.name,
@@ -797,7 +814,7 @@ export const getAllProduct = async (
     page: page, // Current page (1-indexed)
     page_limit: pageSize, // Limit per page
     total_pages: totalPages, // Total pages
-    total: total // Total number of products
+    total: total.count // Total number of products
   }
 
   // Return the result and metadata
@@ -1047,4 +1064,14 @@ export const deleteBrand = async (brandId: number) => {
 
   await db.delete(tblBrands).where(eq(tblBrands.id, brandId))
   return { message: 'Brand deleted successfully' }
+}
+
+export const deleteProduct = async (productId: number) => {
+  const db = getDbClient()
+  const rs = await db
+    .update(tblProducts)
+    .set({ isDeleted: true })
+    .where(eq(tblProducts.id, productId))
+
+  return `${rs} success`
 }
