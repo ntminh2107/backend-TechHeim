@@ -10,7 +10,7 @@ import { tblProducts } from '@/models/product.schema'
 import { tblAddresses, tblUsers } from '@/models/user.schema'
 import { Order, OrderItems, ShipMethod, Transaction } from '@/types/order'
 import { Address } from '@/types/user'
-import { and, eq, sql } from 'drizzle-orm'
+import { and, between, count, desc, eq, sql, sum } from 'drizzle-orm'
 import { findUserByID } from './auth.service'
 
 export const insertOrder = async (
@@ -884,4 +884,73 @@ export const calculateRevenueEachMonth = async () => {
   })
 
   return result
+}
+
+export const getSumOfTotalThisMonth = async () => {
+  const db = await getDbClient()
+  const currentMonth = new Date()
+  const firstDayOfMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth(),
+    1
+  )
+  const lastDayOfMonth = new Date(
+    currentMonth.getFullYear(),
+    currentMonth.getMonth() + 1,
+    0
+  )
+  const result = await db
+    .select({ totalThisMonth: sum(tblOrders.total) })
+    .from(tblOrders)
+    .where(between(tblOrders.createdAt, firstDayOfMonth, lastDayOfMonth))
+    .then((row) => row[0])
+
+  return result.totalThisMonth
+}
+
+export const getTopThreeUserHighestPaid = async () => {
+  const db = await getDbClient()
+  const result = await db
+    .select({
+      ID: tblUsers.id,
+      fullName: tblUsers.fullName,
+      totalPaid: sum(tblOrders.total)
+    })
+    .from(tblUsers)
+    .innerJoin(tblOrders, eq(tblUsers.id, tblOrders.userID))
+    .groupBy(tblOrders.userID, tblUsers.id)
+    .orderBy(desc(sum(tblOrders.total)))
+    .limit(3)
+
+  return result.map((row) => ({
+    fullName: row.fullName,
+    totalPaid: parseFloat(row.totalPaid as string)
+  }))
+}
+
+export const getUserCount = async () => {
+  const db = await getDbClient()
+  const result = await db
+    .select({ count: count(tblUsers.id) })
+    .from(tblUsers)
+    .then((row) => row[0])
+
+  return result.count
+}
+
+export const getTopThreeProducts = async () => {
+  const db = await getDbClient()
+  const topProducts = await db
+    .select({
+      name: tblProducts.name,
+      image: tblProducts.image,
+      totalQuantity: sum(tblOrderItems.quantity)
+    })
+    .from(tblOrderItems)
+    .innerJoin(tblProducts, eq(tblProducts.id, tblOrderItems.productID))
+    .groupBy(tblProducts.name, tblProducts.image)
+    .orderBy(desc(sum(tblOrderItems.quantity)))
+    .limit(3)
+
+  return topProducts
 }

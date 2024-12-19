@@ -75,7 +75,7 @@ const getProductRouter = () => {
     authorize('admin'),
     wrap(deleteProductController)
   )
-  router.post('/comment/add', authorize('admin'), wrap(addCommentToProduct))
+  router.post('/comment/add', wrap(addCommentToProduct))
 
   return router
 }

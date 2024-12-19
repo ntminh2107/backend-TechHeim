@@ -8,6 +8,7 @@ import {
   getBestSellers,
   getInvoice,
   getShipMethods,
+  getStatisticController,
   saveTransactionController
 } from '@/controllers/order.controller'
 import authentication from '@/middlewares/authentication'
@@ -22,6 +23,7 @@ const getOrderRouter = () => {
 
   router.get('/invoice/:orderId', wrap(getInvoice))
   router.get('/revenue', wrap(revenueDisplay))
+  router.get('/statistic', wrap(getStatisticController))
 
   router.use(authentication)
 

@@ -6,8 +6,12 @@ import {
   getAllShipMethods,
   getOrder,
   getOrderByAdmin,
+  getSumOfTotalThisMonth,
   getTopSellingProducts,
+  getTopThreeProducts,
+  getTopThreeUserHighestPaid,
   getTransactionByOrderID,
+  getUserCount,
   insertOrder,
   saveTransaction
 } from '@/services/order.service'
@@ -283,6 +287,20 @@ const getDetailOrderForAdminController = async (
 
 export default getAllOrdersForAdminController
 
+const getStatisticController = async (_req: Request, res: Response) => {
+  const topThree = await getTopThreeUserHighestPaid()
+  const userCount = await getUserCount()
+  const totalThisMonth = await getSumOfTotalThisMonth()
+  const topProduct = await getTopThreeProducts()
+
+  return res.status(HttpStatusCode.OK).json({
+    topThree,
+    userCount,
+    totalThisMonth,
+    topProduct
+  })
+}
+
 export {
   getAnOrderDetail,
   addAnOrder,
@@ -292,5 +310,6 @@ export {
   getAllOrdersController,
   getBestSellers,
   getAllOrdersForAdminController,
-  getDetailOrderForAdminController
+  getDetailOrderForAdminController,
+  getStatisticController
 }
